@@ -746,6 +746,8 @@ async function sheetsPost(data) {
   const resp = await fetch(SHEETS_URL, {
     method: 'POST',
     body: JSON.stringify(data),
+    redirect: 'follow',
+    headers: { 'Content-Type': 'text/plain' },
   });
   return resp.json();
 }

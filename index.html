@@ -1,0 +1,2742 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Etiquetado Trucha — Piscifactoría v3</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f1419;--bg2:#161d26;--bg3:#1e2733;
+  --border:#2a3644;--border2:#344455;
+  --text:#d4dde8;--text2:#8a9ab0;--text3:#556070;
+  --accent:#2ecc8a;--accent2:#1fa870;
+  --danger:#e85c4a;--warning:#f0a040;--info:#4a9eff;
+  --mono:'IBM Plex Mono',monospace;--sans:'IBM Plex Sans',sans-serif;
+  --r:6px;--r2:10px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;font-size:14px;line-height:1.5;padding-bottom:44px}
+
+/* HEADER */
+.app-header{background:var(--bg2);border-bottom:1px solid var(--border);padding:0 20px;height:52px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100}
+.app-logo{font-family:var(--mono);font-size:13px;font-weight:600;color:var(--accent);letter-spacing:.05em}
+.app-logo span{color:var(--text2);font-weight:400}
+.nav-tabs{display:flex;gap:2px;background:var(--bg3);border-radius:var(--r);padding:3px}
+.nav-tab{font-size:12px;font-weight:500;padding:5px 13px;border-radius:4px;border:none;background:transparent;color:var(--text2);cursor:pointer;transition:all .15s;white-space:nowrap;font-family:var(--sans)}
+.nav-tab:hover{color:var(--text);background:var(--border)}
+.nav-tab.active{background:var(--accent);color:#000}
+
+/* LAYOUT */
+.view{display:none}.view.active{display:block}
+.container{max-width:880px;margin:0 auto;padding:28px 20px}
+.container-wide{max-width:1100px;margin:0 auto;padding:28px 20px}
+
+/* CARDS */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:20px;margin-bottom:14px}
+.card-title{font-family:var(--mono);font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid var(--border)}
+.section-title{font-size:18px;font-weight:600;margin-bottom:5px}
+.section-sub{font-size:13px;color:var(--text2);margin-bottom:22px}
+
+/* FORMS */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px}
+.form-grid-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.form-grid-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+.field{display:flex;flex-direction:column;gap:4px}
+.field label{font-size:11px;font-weight:500;color:var(--text2);letter-spacing:.04em;text-transform:uppercase}
+.field input,.field select,.field textarea{background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-family:var(--sans);font-size:14px;padding:8px 10px;outline:none;transition:border-color .15s;width:100%}
+.field input:focus,.field select:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,204,138,.1)}
+.field select option{background:var(--bg3)}
+.field input[type=date]{font-family:var(--mono)}
+.field input[readonly]{color:var(--accent);font-family:var(--mono);background:var(--bg)}
+
+/* TOGGLE */
+.toggle-group{display:flex;gap:6px;flex-wrap:wrap}
+.toggle-btn{padding:6px 14px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:13px;font-weight:500;cursor:pointer;transition:all .15s}
+.toggle-btn:hover{border-color:var(--accent);color:var(--text)}
+.toggle-btn.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+
+/* BUTTONS */
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 18px;border-radius:var(--r);border:none;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:all .15s;white-space:nowrap}
+.btn:disabled{opacity:.35;cursor:not-allowed}
+.btn-primary{background:var(--accent);color:#000}
+.btn-primary:hover:not(:disabled){background:var(--accent2)}
+.btn-secondary{background:var(--bg3);color:var(--text);border:1px solid var(--border2)}
+.btn-secondary:hover:not(:disabled){border-color:var(--accent);color:var(--accent)}
+.btn-danger{background:rgba(232,92,74,.15);color:var(--danger);border:1px solid rgba(232,92,74,.3)}
+.btn-danger:hover:not(:disabled){background:rgba(232,92,74,.25)}
+.btn-print{background:var(--info);color:#fff}
+.btn-print:hover:not(:disabled){background:#3a8ee0}
+.btn-sm{padding:6px 12px;font-size:12px}
+.btn-xs{padding:3px 9px;font-size:11px}
+
+/* CARGA CARDS (home view) */
+.carga-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:12px;margin-bottom:20px}
+.carga-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:16px;cursor:pointer;transition:all .2s;position:relative}
+.carga-card:hover{border-color:var(--accent2);transform:translateY(-1px)}
+.carga-card.estado-en_curso{border-left:3px solid var(--warning)}
+.carga-card.estado-completada{border-left:3px solid var(--accent)}
+.carga-card .cc-nombre{font-size:15px;font-weight:600;margin-bottom:4px}
+.carga-card .cc-cliente{font-size:12px;color:var(--accent);font-family:var(--mono);margin-bottom:8px}
+.carga-card .cc-meta{font-size:12px;color:var(--text2);line-height:1.7}
+.carga-card .cc-estado{position:absolute;top:12px;right:12px;font-size:10px;font-weight:600;letter-spacing:.06em;padding:2px 8px;border-radius:20px;text-transform:uppercase}
+.estado-en_curso .cc-estado{background:rgba(240,160,64,.15);color:var(--warning)}
+.estado-completada .cc-estado{background:rgba(46,204,138,.15);color:var(--accent)}
+
+/* PALLET CARDS */
+.pallet-card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);margin-bottom:10px;overflow:hidden;transition:border-color .2s}
+.pallet-card.is-active{border-color:var(--accent)}
+.pallet-card.is-done{border-color:var(--accent2);opacity:.85}
+.pallet-header{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border-bottom:1px solid var(--border);cursor:pointer;user-select:none}
+.pallet-hdr-left{display:flex;align-items:center;gap:10px}
+.pallet-num{font-family:var(--mono);font-size:20px;font-weight:600;color:var(--accent);min-width:34px}
+.pallet-name{font-size:14px;font-weight:500}
+.badge{font-size:10px;font-weight:600;letter-spacing:.06em;padding:2px 7px;border-radius:20px;text-transform:uppercase}
+.badge-active{background:rgba(46,204,138,.15);color:var(--accent)}
+.badge-done{background:rgba(46,204,138,.25);color:var(--accent2)}
+.badge-warn{background:rgba(240,160,64,.15);color:var(--warning)}
+.pallet-body{padding:14px}
+
+/* PESO COLUMN */
+.peso-col{display:flex;flex-direction:column;gap:3px;margin-bottom:12px;max-width:300px}
+.peso-row{display:flex;align-items:center;gap:8px;padding:2px 0}
+.peso-row label{font-family:var(--mono);font-size:11px;color:var(--text3);width:36px;text-align:right;flex-shrink:0}
+.peso-row input{width:105px;font-family:var(--mono);font-size:15px;font-weight:500;padding:5px 9px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg);color:var(--text);outline:none;transition:border-color .15s}
+.peso-row input:focus{border-color:var(--accent);box-shadow:0 0 0 2px rgba(46,204,138,.1)}
+.peso-row input.filled{border-color:var(--accent2);color:var(--accent)}
+.peso-row input.error{border-color:var(--danger);color:var(--danger);background:rgba(232,92,74,.07)}
+.peso-row .peso-kg{font-size:11px;color:var(--text3)}
+
+/* STATS PANEL */
+.stats-panel{background:var(--bg);border:1px solid var(--border);border-radius:var(--r);padding:12px;display:flex;flex-direction:column;gap:10px}
+.stat{display:flex;flex-direction:column}
+.stat-val{font-family:var(--mono);font-size:16px;font-weight:600;color:var(--accent)}
+.stat-lbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+
+/* META ROW */
+.pallet-meta{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:12px;padding:8px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)}
+.meta-field{display:flex;align-items:center;gap:6px}
+.meta-field label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.meta-field input{font-family:var(--mono);font-size:13px;padding:4px 7px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text);outline:none}
+.meta-field input:focus{border-color:var(--accent)}
+.meta-field input[type=date]{width:148px}
+.meta-field input[type=number]{width:68px;text-align:center}
+
+/* CALIBRE ROW */
+.calibre-row{display:flex;align-items:center;gap:8px;margin-bottom:12px;padding:8px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border);flex-wrap:wrap}
+.calibre-row label{font-size:11px;color:var(--text2);text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.calibre-select{font-family:var(--mono);font-size:13px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text);outline:none}
+.calibre-select:focus{border-color:var(--accent)}
+.cal-warn{display:none;font-size:11px;color:var(--warning);background:rgba(240,160,64,.1);border:1px solid rgba(240,160,64,.2);border-radius:var(--r);padding:3px 8px}
+.cal-warn.on{display:block}
+
+/* ALERTS */
+.alert{display:none;align-items:center;gap:7px;padding:7px 11px;border-radius:var(--r);font-size:12px;font-weight:500;margin-bottom:10px}
+.alert.on{display:flex}
+.alert-danger{background:rgba(232,92,74,.1);color:#ff8070;border:1px solid rgba(232,92,74,.2)}
+.alert-warn{background:rgba(240,160,64,.1);color:var(--warning);border:1px solid rgba(240,160,64,.2)}
+.alert-ok{background:rgba(46,204,138,.08);color:var(--accent);border:1px solid rgba(46,204,138,.2)}
+
+/* PALLET FOOTER */
+.pallet-footer{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;padding-top:10px;border-top:1px solid var(--border)}
+
+/* ENVIO BANNER */
+.envio-banner{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:10px 14px;display:flex;flex-wrap:wrap;gap:16px;margin-bottom:16px}
+.epill{display:flex;flex-direction:column}
+.epill .elbl{font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em}
+.epill .eval{font-size:13px;font-weight:500;color:var(--text);font-family:var(--mono)}
+
+/* ADD PALLET BTN */
+.add-pallet-btn{width:100%;padding:13px;border:2px dashed var(--border2);border-radius:var(--r2);background:transparent;color:var(--text2);font-size:14px;font-weight:500;cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:10px}
+.add-pallet-btn:hover{border-color:var(--accent);color:var(--accent);background:rgba(46,204,138,.04)}
+
+/* PACKING TABLE */
+.pack-table{width:100%;border-collapse:collapse;font-size:13px}
+.pack-table th{font-family:var(--mono);font-size:10px;font-weight:600;letter-spacing:.06em;color:var(--text2);text-transform:uppercase;text-align:left;padding:7px 10px;border-bottom:1px solid var(--border2)}
+.pack-table td{padding:7px 10px;border-bottom:1px solid var(--border);font-family:var(--mono);font-size:13px}
+.pack-table tr:hover td{background:var(--bg3)}
+.pack-table .total-row td{font-weight:600;color:var(--accent);border-top:2px solid var(--border2);border-bottom:none}
+.pack-table .warn-row td{color:var(--warning)}
+.pack-table td.r{text-align:right}
+
+/* CLIENTES */
+.cliente-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:14px}
+.cliente-card{background:var(--bg3);border:1px solid var(--border);border-radius:var(--r2);padding:14px;cursor:pointer;transition:all .2s}
+.cliente-card:hover{border-color:var(--accent2)}
+.cliente-card.selected{border-color:var(--accent);background:rgba(46,204,138,.05)}
+.cliente-card .cn{font-size:15px;font-weight:600;margin-bottom:5px}
+.cliente-card .cd{font-size:11px;color:var(--text2);line-height:1.7}
+
+/* ZPL EDITOR */
+.zpl-tabs{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.zpl-tab{padding:6px 14px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text2);font-size:12px;cursor:pointer;transition:all .15s}
+.zpl-tab:hover{border-color:var(--accent2);color:var(--text)}
+.zpl-tab.active{background:var(--accent);border-color:var(--accent);color:#000;font-weight:600}
+.zpl-layout{display:grid;grid-template-columns:1fr 320px;gap:16px;align-items:start}
+.zpl-preview{background:#f0f0f0;border-radius:var(--r2);padding:12px;display:flex;align-items:center;justify-content:center;min-height:320px}
+.zpl-preview img{max-width:100%;border-radius:4px;box-shadow:0 2px 12px rgba(0,0,0,.3)}
+.zpl-preview-placeholder{color:#888;font-size:13px;text-align:center}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:500;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--bg2);border:1px solid var(--border2);border-radius:var(--r2);padding:24px;width:100%;max-width:540px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;font-weight:600;margin-bottom:16px}
+
+/* MISC */
+.flex-between{display:flex;justify-content:space-between;align-items:center}
+.flex{display:flex;align-items:center}
+.gap-8{gap:8px}.gap-12{gap:12px}
+.mt-12{margin-top:12px}.mt-16{margin-top:16px}
+.mb-12{margin-bottom:12px}.mb-16{margin-bottom:16px}
+.hidden{display:none!important}
+.mono{font-family:var(--mono)}
+textarea.code-area{width:100%;font-family:var(--mono);font-size:11px;background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);color:var(--text2);padding:10px;resize:vertical;outline:none;line-height:1.6}
+textarea.code-area:focus{border-color:var(--accent)}
+
+/* STATUS BAR */
+.status-bar{position:fixed;bottom:0;left:0;right:0;background:var(--bg2);border-top:1px solid var(--border);padding:5px 20px;display:flex;align-items:center;justify-content:space-between;font-size:11px;color:var(--text2);z-index:200}
+.sync-dot{width:7px;height:7px;border-radius:50%;display:inline-block;margin-right:6px}
+.sync-ok{background:var(--accent);animation:pulse 2s infinite}
+.sync-pending{background:var(--warning);animation:pulse .8s infinite}
+.sync-offline{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+
+/* PRINT */
+@media print{
+  @page { size: A4; margin: 15mm; }
+  body * { visibility: hidden }
+  #print-area, #print-area * { visibility: visible }
+  #print-area { position:fixed;left:0;top:0;width:100mm;height:100mm;z-index:9999 }
+  .pl-printable, .pl-printable * { visibility: visible !important }
+  .pl-printable {
+    position: fixed; left: 0; top: 0; right: 0; bottom: 0;
+    background: white; z-index: 9999; padding: 20px;
+    font-family: Arial, sans-serif; font-size: 12px; color: #000;
+  }
+}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="app-logo">▣ TRUCHA <span>/ Etiquetado v3</span></div>
+  <nav class="nav-tabs">
+    <button class="nav-tab active" onclick="goView('home')" id="tab-home">🏠 Cargas</button>
+    <button class="nav-tab" onclick="goView('pesos')" id="tab-pesos">② Pesos</button>
+    <button class="nav-tab" onclick="goView('packing')" id="tab-packing">③ Packing List</button>
+    <button class="nav-tab" onclick="goView('balance')" id="tab-balance">④ Balance</button>
+    <button class="nav-tab" onclick="goView('etiquetas')" id="tab-etiquetas">⚙ Etiquetas</button>
+    <button class="nav-tab" onclick="goView('clientes')" id="tab-clientes">⚙ Clientes</button>
+  </nav>
+</header>
+
+<!-- ══ VIEW: HOME / CARGAS ══ -->
+<div id="view-home" class="view active">
+<div class="container">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title">Cargas</div>
+      <div class="section-sub">Selecciona una carga existente o crea una nueva</div>
+    </div>
+    <button class="btn btn-primary" onclick="openNuevaCarga()">+ Nueva carga</button>
+  </div>
+  <div class="carga-grid" id="carga-grid"></div>
+  <div id="carga-empty" class="hidden" style="text-align:center;padding:40px;color:var(--text3)">
+    No hay cargas registradas. Crea la primera con el botón de arriba.
+  </div>
+</div>
+</div>
+
+<!-- ══ VIEW: PESOS ══ -->
+<div id="view-pesos" class="view">
+<div class="container">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title" id="pesos-title">Pesos</div>
+      <div class="section-sub" id="pesos-sub">—</div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-secondary btn-sm" onclick="goView('home')">← Cargas</button>
+      <button class="btn btn-secondary btn-sm" onclick="openEditCarga()">✏ Editar cabecera</button>
+    </div>
+  </div>
+  <div style="display:grid;grid-template-columns:1fr 220px;gap:16px;align-items:start;margin-bottom:16px">
+    <div>
+      <div class="envio-banner" id="envio-banner" style="margin-bottom:10px"></div>
+      <!-- PISCINAS POR RANGO -->
+      <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px">
+        <div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+          Piscinas por rango de pallets
+          <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">— opcional, se aplica al añadir nuevos pallets</span>
+        </div>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr;gap:8px;margin-bottom:6px">
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Desde</span>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Hasta</span>
+          <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.04em">Piscina</span>
+        </div>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr;gap:8px;margin-bottom:5px">
+          <input type="number" id="pr-desde-1" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="number" id="pr-hasta-1" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="text" id="pr-pisc-1" placeholder="ej. H3-2" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none">
+        </div>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr;gap:8px;margin-bottom:5px">
+          <input type="number" id="pr-desde-2" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="number" id="pr-hasta-2" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="text" id="pr-pisc-2" placeholder="ej. H4-4" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none">
+        </div>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr;gap:8px;margin-bottom:5px">
+          <input type="number" id="pr-desde-3" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="number" id="pr-hasta-3" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="text" id="pr-pisc-3" placeholder="ej. H3-1" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none">
+        </div>
+        <div style="display:grid;grid-template-columns:80px 80px 1fr;gap:8px">
+          <input type="number" id="pr-desde-4" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="number" id="pr-hasta-4" min="1" max="33" placeholder="—" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center">
+          <input type="text" id="pr-pisc-4" placeholder="ej. H4-1" oninput="savePiscinaRangos()"
+            style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none">
+        </div>
+        <div style="margin-top:8px">
+          <button class="btn btn-secondary btn-xs" onclick="aplicarPiscinaRangos()">↺ Aplicar a pallets existentes</button>
+        </div>
+      </div>
+    </div>
+    <div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px">
+      <div style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:8px;display:flex;justify-content:space-between">
+        <span>Preview etiqueta</span>
+        <span style="font-size:9px" id="preview-caja-label">caja 01 · pallet 01</span>
+      </div>
+      <div id="envio-label-preview" style="background:#f5f5f5;border-radius:4px;min-height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+        <span style="color:#999;font-size:11px;text-align:center;padding:8px">Añade un pallet<br>para ver la preview</span>
+      </div>
+    </div>
+  </div>
+  <div id="pallets-list"></div>
+  <button class="add-pallet-btn" onclick="addPallet()">
+    <span style="font-size:18px">+</span> Añadir pallet
+  </button>
+  <div id="finish-section" class="hidden">
+    <div class="card" style="border-color:var(--accent);text-align:center;padding:22px">
+      <div style="font-size:18px;margin-bottom:6px">✅ Todos los pallets impresos</div>
+      <div style="color:var(--text2);margin-bottom:14px">Puedes marcar la carga como completada</div>
+      <div class="flex gap-8" style="justify-content:center">
+        <button class="btn btn-secondary" onclick="goView('packing')">Ver Packing List</button>
+        <button class="btn btn-primary" onclick="completarCarga()">Marcar como completada</button>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ VIEW: PACKING LIST ══ -->
+<div id="view-packing" class="view">
+<div class="container">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title">Packing List</div>
+      <div class="section-sub" id="pl-sub">—</div>
+    </div>
+    <div class="flex gap-8">
+      <div class="nav-tabs" style="padding:2px">
+        <button class="nav-tab active" id="pl-lang-es" onclick="setPlIdioma('es')">🇪🇸 ES</button>
+        <button class="nav-tab" id="pl-lang-en" onclick="setPlIdioma('en')">🇬🇧 EN</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="goView('pesos')">← Volver</button>
+      <button class="btn btn-print btn-sm" onclick="printPackingList()">🖨 Imprimir / PDF</button>
+    </div>
+  </div>
+  <div class="card" id="pl-header"></div>
+  <div class="card">
+    <div class="card-title">Detalle por pallet</div>
+    <table class="pack-table" id="pl-table"></table>
+  </div>
+</div>
+</div>
+
+<!-- ══ VIEW: BALANCE DE MASAS ══ -->
+<div id="view-balance" class="view">
+<div class="container">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title">Balance de Masas</div>
+      <div class="section-sub" id="balance-sub">—</div>
+    </div>
+    <div class="flex gap-8">
+      <button class="btn btn-secondary btn-sm" onclick="goView('pesos')">← Volver</button>
+      <button class="btn btn-print btn-sm" onclick="printBalance()">🖨 Imprimir</button>
+    </div>
+  </div>
+
+  <div id="balance-piscinas"></div>
+
+  <div class="card" style="margin-top:8px">
+    <div class="card-title">Totales del camión</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
+      <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:14px;text-align:center">
+        <div class="stat-val" id="bal-total-uds">—</div>
+        <div class="stat-lbl">Unidades totales evisceradas</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:14px;text-align:center">
+        <div class="stat-val" id="bal-total-kg">—</div>
+        <div class="stat-lbl">Kg totales eviscerados</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:14px;text-align:center">
+        <input type="number" id="bal-fuera-peso" min="0" value="0"
+          style="width:80px;font-family:var(--mono);font-size:22px;font-weight:600;color:var(--accent);background:transparent;border:none;outline:none;text-align:center"
+          oninput="saveBalance()">
+        <div class="stat-lbl">Uds. fuera de peso (congeladas)</div>
+      </div>
+      <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:14px;text-align:center">
+        <input type="number" id="bal-desechadas" min="0" value="0"
+          style="width:80px;font-family:var(--mono);font-size:22px;font-weight:600;color:var(--accent);background:transparent;border:none;outline:none;text-align:center"
+          oninput="saveBalance()">
+        <div class="stat-lbl">Uds. desechadas (deformadas...)</div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ VIEW: ETIQUETAS / ZPL ══ -->
+<div id="view-etiquetas" class="view">
+<div class="container-wide">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title">Plantillas de etiqueta</div>
+      <div class="section-sub">Gestiona el ZPL de cada plantilla. La preview se genera vía Labelary.</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="nuevaPlantilla()">+ Nueva plantilla</button>
+  </div>
+  <div class="zpl-tabs" id="zpl-tabs"></div>
+  <div class="zpl-layout" id="zpl-layout" style="display:none">
+    <div>
+      <div class="card" style="margin-bottom:10px">
+        <div class="card-title">Nombre plantilla</div>
+        <div class="flex gap-8">
+          <input type="text" id="zpl-nombre" placeholder="ej. MOWI_EN, Genérica_ES..."
+            style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:14px;padding:8px 10px;outline:none">
+          <button class="btn btn-secondary btn-sm" onclick="eliminarPlantilla()">Eliminar</button>
+          <button class="btn btn-primary btn-sm" onclick="guardarPlantilla()">Guardar</button>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Código ZPL
+          <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
+            Variables: {PALLET} {CAJA} {CALIBRE} {PESO} {LOTE} {CAPTURA} {CADUCIDAD} {CLIENTE} {GGN} {BARCODE}
+          </span>
+        </div>
+        <textarea class="code-area" id="zpl-editor" rows="22"
+          placeholder="Pega aquí el ZPL. Usa {PALLET}, {CAJA}, {PESO}... para los campos variables."
+          oninput="schedulePreview()"></textarea>
+        <div class="flex gap-8 mt-12">
+          <button class="btn btn-secondary btn-sm" onclick="previewZPL()">👁 Actualizar preview</button>
+          <button class="btn btn-secondary btn-sm" onclick="regenerarHTML()">⚙ Regenerar HTML</button>
+          <span style="font-size:11px;color:var(--text3);margin-left:4px">La preview usa datos de ejemplo</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Preview (Labelary)</div>
+        <div class="zpl-preview" id="zpl-preview">
+          <div class="zpl-preview-placeholder">Escribe ZPL y pulsa<br>"Actualizar preview"</div>
+        </div>
+        <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">
+          Preview a 203dpi, 10x10cm
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-title">Campos variables disponibles</div>
+        <div style="font-size:12px;color:var(--text2);line-height:2">
+          <code style="color:var(--accent)">{PALLET}</code> — Nº pallet (ej. 03)<br>
+          <code style="color:var(--accent)">{CAJA}</code> — Nº caja (ej. 12)<br>
+          <code style="color:var(--accent)">{CALIBRE}</code> — ej. 2-3 Kg<br>
+          <code style="color:var(--accent)">{PESO}</code> — ej. 21,6<br>
+          <code style="color:var(--accent)">{LOTE}</code> — ej. OV-05-26<br>
+          <code style="color:var(--accent)">{CAPTURA}</code> — ej. 07/05/2026<br>
+          <code style="color:var(--accent)">{CADUCIDAD}</code> — ej. 21/05/2026<br>
+          <code style="color:var(--accent)">{CLIENTE}</code> — ej. MOWI Poland S.A.<br>
+          <code style="color:var(--accent)">{GGN}</code> — ej. 4052852774918<br>
+          <code style="color:var(--accent)">{BARCODE}</code> — código EAN-13
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="zpl-empty" style="text-align:center;padding:40px;color:var(--text3)">
+    No hay plantillas. Crea una con el botón de arriba o pega tu ZPL de Bartender.
+  </div>
+</div>
+</div>
+
+<!-- ══ VIEW: CLIENTES ══ -->
+<div id="view-clientes" class="view">
+<div class="container">
+  <div class="flex-between mb-16">
+    <div>
+      <div class="section-title">Clientes</div>
+      <div class="section-sub">Configura los datos por defecto de cada cliente</div>
+    </div>
+    <button class="btn btn-primary btn-sm" onclick="openClienteModal(null)">+ Nuevo cliente</button>
+  </div>
+  <div id="clientes-list"></div>
+
+  <!-- CALIBRES -->
+  <div class="card" style="margin-top:24px">
+    <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+      <span>Rangos de calibre</span>
+      <button class="btn btn-secondary btn-xs" onclick="addCalibre()">+ Añadir rango</button>
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:12px">
+      Rangos globales usados para asignación automática de calibre en todos los pallets.
+    </div>
+    <div id="calibres-list"></div>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL: NUEVA / EDITAR CARGA ══ -->
+<div class="modal-overlay" id="modal-carga">
+<div class="modal" style="max-width:600px">
+  <div class="modal-title" id="modal-carga-title">Nueva carga</div>
+
+  <div class="field mb-12">
+    <label>Cliente</label>
+    <select id="mc-cliente" onchange="onSelectClienteCarga()">
+      <option value="">— Selecciona cliente —</option>
+    </select>
+  </div>
+
+  <div class="form-grid-2 mb-12">
+    <div class="field">
+      <label>Nombre de la carga</label>
+      <input type="text" id="mc-nombre" placeholder="ej. Camión 1 MOWI 2026">
+    </div>
+    <div class="field">
+      <label>Fecha de carga (salida)</label>
+      <input type="date" id="mc-fecha">
+    </div>
+  </div>
+
+  <div class="form-grid-3 mb-12">
+    <div class="field">
+      <label>Lote</label>
+      <input type="text" id="mc-lote" placeholder="ej. OV-05-26" style="font-family:var(--mono)">
+    </div>
+    <div class="field">
+      <label>Días caducidad</label>
+      <input type="number" id="mc-dias" value="14" min="1" max="60">
+    </div>
+    <div class="field">
+      <label>Plantilla etiqueta</label>
+      <select id="mc-plantilla">
+        <option value="">— Sin plantilla —</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="form-grid-2 mb-16">
+    <div class="field">
+      <label>Código de barras</label>
+      <select id="mc-barcode">
+        <option value="no">No</option>
+        <option value="si">Sí</option>
+      </select>
+    </div>
+    <div class="field" id="mc-prefix-wrap" style="display:none">
+      <label>Prefijo barcode</label>
+      <input type="text" id="mc-prefix" style="font-family:var(--mono)">
+    </div>
+  </div>
+
+  <!-- TRAMOS DE CAPTURA -->
+  <div style="margin-bottom:16px">
+    <div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid var(--border)">
+      Tramos de captura
+    </div>
+    <div style="font-size:12px;color:var(--text3);margin-bottom:10px">
+      Define qué pallets se harán cada día. La fecha de captura se asignará automáticamente a cada pallet.
+    </div>
+    <div style="display:grid;grid-template-columns:80px 80px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px">
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Desde</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Hasta</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Fecha captura</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Caducidad</span>
+    </div>
+    <div style="display:grid;grid-template-columns:80px 80px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px" id="tramo-row-1">
+      <input type="number" id="tr-desde-1" min="1" max="33" value="1"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="number" id="tr-hasta-1" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="date" id="tr-fecha-1"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none"
+        oninput="recalcTramos()">
+      <input type="text" id="tr-cad-1" readonly placeholder="—"
+        style="font-family:var(--mono);font-size:12px;padding:5px 7px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--accent);outline:none">
+    </div>
+    <div style="display:grid;grid-template-columns:80px 80px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px" id="tramo-row-2">
+      <input type="number" id="tr-desde-2" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="number" id="tr-hasta-2" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="date" id="tr-fecha-2"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none"
+        oninput="recalcTramos()">
+      <input type="text" id="tr-cad-2" readonly placeholder="—"
+        style="font-family:var(--mono);font-size:12px;padding:5px 7px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--accent);outline:none">
+    </div>
+    <div style="display:grid;grid-template-columns:80px 80px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px" id="tramo-row-3">
+      <input type="number" id="tr-desde-3" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="number" id="tr-hasta-3" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="date" id="tr-fecha-3"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none"
+        oninput="recalcTramos()">
+      <input type="text" id="tr-cad-3" readonly placeholder="—"
+        style="font-family:var(--mono);font-size:12px;padding:5px 7px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--accent);outline:none">
+    </div>
+    <div style="display:grid;grid-template-columns:80px 80px 1fr 1fr;gap:8px;align-items:center;margin-bottom:6px" id="tramo-row-4">
+      <input type="number" id="tr-desde-4" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="number" id="tr-hasta-4" min="1" max="33" placeholder="—"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;text-align:center"
+        oninput="recalcTramos()">
+      <input type="date" id="tr-fecha-4"
+        style="font-family:var(--mono);font-size:13px;padding:5px 7px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none"
+        oninput="recalcTramos()">
+      <input type="text" id="tr-cad-4" readonly placeholder="—"
+        style="font-family:var(--mono);font-size:12px;padding:5px 7px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--accent);outline:none">
+    </div>
+  </div>
+
+  <div class="flex-between">
+    <button class="btn btn-danger btn-sm" id="mc-delete-btn" onclick="eliminarCarga()" style="display:none">Eliminar carga</button>
+    <div class="flex gap-8" style="margin-left:auto">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-carga')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardarCarga()">Guardar y abrir →</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ══ MODAL: CLIENTE ══ -->
+<div class="modal-overlay" id="modal-cliente">
+<div class="modal">
+  <div class="modal-title" id="modal-cliente-title">Nuevo cliente</div>
+  <div class="form-grid-2 mb-12">
+    <div class="field"><label>Nombre</label><input type="text" id="cl-nombre"></div>
+    <div class="field"><label>Idioma etiqueta</label>
+      <select id="cl-idioma"><option value="es">🇪🇸 Español</option><option value="en">🇬🇧 English</option></select>
+    </div>
+  </div>
+  <div class="form-grid-2 mb-12">
+    <div class="field"><label>Texto "Producido para"</label><input type="text" id="cl-producido"></div>
+    <div class="field"><label>Temperatura</label>
+      <select id="cl-temp"><option value="-3/+2">-3ºC / +2ºC</option><option value="0/+2">0ºC / +2ºC</option></select>
+    </div>
+  </div>
+  <div class="form-grid-3 mb-12">
+    <div class="field"><label>Días caducidad</label><input type="number" id="cl-dias" value="14"></div>
+    <div class="field"><label>Cajas/pallet</label><input type="number" id="cl-cajas" value="24"></div>
+    <div class="field"><label>Pallets máx.</label><input type="number" id="cl-pallets" value="33"></div>
+  </div>
+  <div class="form-grid-2 mb-16">
+    <div class="field">
+      <label>Calibre mínimo aceptado (kg)</label>
+      <input type="number" id="cl-calmin" value="2" step="0.1" min="0.5" max="10">
+      <span style="font-size:11px;color:var(--text3);margin-top:3px">Avisa si el peso medio/pez está por debajo de este valor</span>
+    </div>
+    <div class="field">
+      <label>Plantilla etiqueta por defecto</label>
+      <select id="cl-plantilla">
+        <option value="">— Sin plantilla —</option>
+      </select>
+    </div>
+  </div>
+  <div class="flex-between">
+    <button class="btn btn-danger btn-sm" id="cl-delete-btn" onclick="deleteCliente()" style="display:none">Eliminar</button>
+    <div class="flex gap-8" style="margin-left:auto">
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('modal-cliente')">Cancelar</button>
+      <button class="btn btn-primary btn-sm" onclick="saveCliente()">Guardar</button>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="print-area" style="display:none;position:fixed;left:0;top:0;z-index:9999"></div>
+
+<!-- STATUS BAR -->
+<div class="status-bar">
+  <div><span class="sync-dot sync-ok" id="sync-dot"></span><span id="st-text">Iniciando...</span></div>
+  <div class="flex gap-12">
+    <span id="st-carga">—</span>
+    <span id="st-pallets">—</span>
+    <span id="st-kg">—</span>
+  </div>
+</div>
+
+<script>
+// ════════════════════════════════════════════════════════
+//  CONFIG
+// ════════════════════════════════════════════════════════
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZt0k9m5fZxhG_9RiYwT3nB29bzgCnw5enYLiiop6MNPBOVjP4lPFBZj9l_XXfLY65/exec';
+
+const CALIBRE_RANGOS_DEFAULT = [
+  {id:'c1-15',  label:'1 - 1,5 Kg',  min:1,   max:1.5},
+  {id:'c15-2',  label:'1,5 - 2 Kg',  min:1.5, max:2  },
+  {id:'c2-25',  label:'2 - 2,5 Kg',  min:2,   max:2.5},
+  {id:'c25-3',  label:'2,5 - 3 Kg',  min:2.5, max:3  },
+  {id:'c3-35',  label:'3 - 3,5 Kg',  min:3,   max:3.5},
+  {id:'c35-4',  label:'3,5 - 4 Kg',  min:3.5, max:4  },
+  {id:'cp4',    label:'+4 Kg',        min:4,   max:99 },
+];
+
+const CLIENTES_DEFAULT = [
+  {id:'vensy',    nombre:'Vensy',    idioma:'es', producido:'Vensy',                    temp:'-3/+2', diasCad:10, cajasPallet:24, palletsMax:5,  calMin:2.5},
+  {id:'suempol',  nombre:'Suempol',  idioma:'en', producido:'SUEMPOL Sp.z O.O. Poland', temp:'0/+2',  diasCad:14, cajasPallet:24, palletsMax:33, calMin:2  },
+  {id:'mowi',     nombre:'MOWI',     idioma:'en', producido:'MOWI Poland S.A.',          temp:'0/+2',  diasCad:14, cajasPallet:24, palletsMax:33, calMin:2  },
+  {id:'aqualande',nombre:'Aqualande',idioma:'en', producido:'AQUALANDE, Francia',        temp:'-3/+2', diasCad:10, cajasPallet:14, palletsMax:33, calMin:2  },
+];
+
+// ════════════════════════════════════════════════════════
+//  STATE
+// ════════════════════════════════════════════════════════
+let DB = {
+  clientes:     JSON.parse(localStorage.getItem('clientes')     || 'null') || CLIENTES_DEFAULT,
+  cargas:       JSON.parse(localStorage.getItem('cargas')       || '[]'),
+  zplTemplates: JSON.parse(localStorage.getItem('zplTemplates') || '[]'),
+  calibres:     JSON.parse(localStorage.getItem('calibres')     || 'null') || CALIBRE_RANGOS_DEFAULT,
+};
+
+// Always use DB.calibres as the source of truth
+function getCalibreRangos() { return DB.calibres; }
+
+let cargaActual = null;   // objeto carga completo con sus pallets
+let pallets = [];
+let syncPending = false;
+let onlineStatus = navigator.onLine;
+let editingClienteId = null;
+let editingCargaId = null;
+let zplTabActual = null;
+let previewTimer = null;
+
+// ════════════════════════════════════════════════════════
+//  SYNC / SHEETS
+// ════════════════════════════════════════════════════════
+async function sheetsPost(data) {
+  const resp = await fetch(SHEETS_URL, {
+    method: 'POST',
+    body: JSON.stringify(data),
+  });
+  return resp.json();
+}
+
+function setSyncStatus(status, text) {
+  const dot = document.getElementById('sync-dot');
+  dot.className = 'sync-dot ' + (status === 'ok' ? 'sync-ok' : status === 'pending' ? 'sync-pending' : 'sync-offline');
+  document.getElementById('st-text').textContent = text;
+}
+
+async function syncToSheets() {
+  if (!navigator.onLine) { setSyncStatus('offline', 'Sin conexión — datos guardados localmente'); return; }
+  try {
+    setSyncStatus('pending', 'Sincronizando...');
+    // Sync clientes
+    await sheetsPost({ action: 'guardarClientes', clientes: DB.clientes });
+    // Sync índice de cargas
+    for (const c of DB.cargas) {
+      await sheetsPost({ action: 'guardarCabeceraCarga', carga: c });
+    }
+    // Sync pallets de carga actual si existe
+    if (cargaActual) {
+      await sheetsPost({ action: 'guardarPalletsCarga', cargaId: cargaActual.id, pallets });
+    }
+    syncPending = false;
+    setSyncStatus('ok', 'Sincronizado con Google Sheets');
+  } catch(e) {
+    syncPending = true;
+    setSyncStatus('pending', 'Pendiente de sync');
+  }
+}
+
+async function syncPallets() {
+  saveLocal();
+  if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — guardado local'); return; }
+  try {
+    setSyncStatus('pending','Guardando...');
+    await sheetsPost({ action:'guardarPalletsCarga', cargaId:cargaActual.id, pallets });
+    setSyncStatus('ok','Guardado');
+  } catch(e) {
+    syncPending = true;
+    setSyncStatus('pending','Pendiente de sync');
+  }
+}
+
+function saveLocal() {
+  localStorage.setItem('clientes', JSON.stringify(DB.clientes));
+  localStorage.setItem('cargas', JSON.stringify(DB.cargas));
+  localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
+  localStorage.setItem('calibres', JSON.stringify(DB.calibres));
+  if (cargaActual) {
+    localStorage.setItem('pallets_' + cargaActual.id, JSON.stringify(pallets));
+  }
+}
+
+async function cargarDesdeSheetsInicial() {
+  if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — usando datos locales'); return; }
+  try {
+    setSyncStatus('pending','Cargando desde Sheets...');
+    // Cargar clientes — deduplicar por ID
+    const rCl = await sheetsPost({ action:'cargarClientes' });
+    if (rCl.clientes && rCl.clientes.length > 0) {
+      const seen = new Set();
+      DB.clientes = rCl.clientes.filter(c => {
+        if (seen.has(c.id)) return false;
+        seen.add(c.id); return true;
+      });
+      localStorage.setItem('clientes', JSON.stringify(DB.clientes));
+      // Fix duplicates in Sheets too
+      await sheetsPost({ action:'guardarClientes', clientes: DB.clientes });
+    }
+    // Cargar índice cargas — deduplicar por ID
+    const rCg = await sheetsPost({ action:'listarCargas' });
+    if (rCg.cargas) {
+      const seen2 = new Set();
+      DB.cargas = rCg.cargas.filter(c => {
+        if (seen2.has(c.id)) return false;
+        seen2.add(c.id); return true;
+      });
+      localStorage.setItem('cargas', JSON.stringify(DB.cargas));
+    }
+    // Cargar plantillas ZPL
+    const rZpl = await sheetsPost({ action:'listarZPL' });
+    if (rZpl.templates && rZpl.templates.length > 0) {
+      const loaded = [];
+      for (const t of rZpl.templates) {
+        try {
+          const r = await sheetsPost({ action:'cargarZPL', clave: t.clave });
+          if (r.zpl) loaded.push({ clave: t.clave, zpl: r.zpl });
+        } catch(e) {}
+      }
+      if (loaded.length > 0) {
+        DB.zplTemplates = loaded;
+        localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
+      }
+    }
+    setSyncStatus('ok','Sincronizado');
+    renderHome();
+  } catch(e) {
+    setSyncStatus('offline','Error de conexión — datos locales');
+  }
+}
+
+window.addEventListener('online',  () => { onlineStatus=true;  syncToSheets(); });
+window.addEventListener('offline', () => { onlineStatus=false; setSyncStatus('offline','Sin conexión'); });
+
+// ════════════════════════════════════════════════════════
+//  NAVIGATION
+// ════════════════════════════════════════════════════════
+function goView(v) {
+  document.querySelectorAll('.view').forEach(x => x.classList.remove('active'));
+  document.querySelectorAll('.nav-tab').forEach(x => x.classList.remove('active'));
+  document.getElementById('view-' + v).classList.add('active');
+  document.getElementById('tab-' + v).classList.add('active');
+  if (v==='home')      renderHome();
+  if (v==='pesos')     renderPesos();
+  if (v==='packing')   { plIdioma = null; renderPackingList(); }
+  if (v==='balance')   renderBalance();
+  if (v==='etiquetas') renderEtiquetas();
+  if (v==='clientes')  renderClientesList();
+}
+
+// ════════════════════════════════════════════════════════
+//  HOME — CARGAS
+// ════════════════════════════════════════════════════════
+function renderHome() {
+  const grid = document.getElementById('carga-grid');
+  const empty = document.getElementById('carga-empty');
+  if (!DB.cargas.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+    return;
+  }
+  empty.classList.add('hidden');
+  // Sort: en_curso primero, luego por fecha desc
+  const sorted = [...DB.cargas].sort((a,b) => {
+    if (a.estado !== b.estado) return a.estado === 'en_curso' ? -1 : 1;
+    return b.fechaCarga.localeCompare(a.fechaCarga);
+  });
+  grid.innerHTML = sorted.map(c => {
+    const cl = DB.clientes.find(x => x.id === c.clienteId);
+    return `<div class="carga-card estado-${c.estado}" onclick="abrirCarga('${c.id}')">
+      <div class="cc-estado">${c.estado === 'en_curso' ? 'En curso' : 'Completada'}</div>
+      <div class="cc-nombre">${c.nombre}</div>
+      <div class="cc-cliente">${cl ? cl.nombre : c.clienteId}</div>
+      <div class="cc-meta">
+        📅 Carga: ${fmtDateISO(c.fechaCarga)}<br>
+        📦 Lote: ${c.lote || '—'}<br>
+        ⏱ Cad: ${c.diasCad} días
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function abrirCarga(id) {
+  cargaActual = DB.cargas.find(c => c.id === id);
+  if (!cargaActual) return;
+  // Cargar pallets — primero local, luego sheets
+  const localPallets = localStorage.getItem('pallets_' + id);
+  if (localPallets) {
+    pallets = JSON.parse(localPallets);
+  } else {
+    pallets = [];
+  }
+  // Intentar cargar de sheets en background
+  if (navigator.onLine) {
+    try {
+      const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
+      if (r.pallets && r.pallets.length > 0) {
+        // Reconstruct pallets with proper IDs for DOM
+        pallets = r.pallets.map(p => ({
+          ...p,
+          id: 'p' + p.palletNum + '_' + id,
+          pesos: p.pesos || new Array(p.cajas).fill(''),
+          // Normalise fechaCaptura — Sheets may return a Date string in various formats
+          fechaCaptura: normalizeDate(p.fechaCaptura),
+        }));
+        saveLocal();
+      }
+    } catch(e) {}
+  }
+  goView('pesos');
+}
+
+// ════════════════════════════════════════════════════════
+//  MODAL — NUEVA / EDITAR CARGA
+// ════════════════════════════════════════════════════════
+function openNuevaCarga() {
+  editingCargaId = null;
+  document.getElementById('modal-carga-title').textContent = 'Nueva carga';
+  const sel = document.getElementById('mc-cliente');
+  sel.innerHTML = '<option value="">— Selecciona cliente —</option>' +
+    DB.clientes.map(c => `<option value="${c.id}">${c.nombre}</option>`).join('');
+  populatePlantillaSelect();
+  document.getElementById('mc-nombre').value = '';
+  document.getElementById('mc-lote').value = '';
+  document.getElementById('mc-barcode').value = 'no';
+  document.getElementById('mc-prefix').value = '';
+  document.getElementById('mc-prefix-wrap').style.display = 'none';
+  document.getElementById('mc-dias').value = 14;
+  document.getElementById('mc-fecha').value = isoToday();
+  document.getElementById('mc-delete-btn').style.display = 'none';
+  // Reset tramos
+  for (let n=1;n<=4;n++) {
+    document.getElementById('tr-desde-'+n).value = '';
+    document.getElementById('tr-hasta-'+n).value = '';
+    document.getElementById('tr-fecha-'+n).value = '';
+    document.getElementById('tr-cad-'+n).value = '';
+  }
+  // Show barcode prefix when needed
+  document.getElementById('mc-barcode').onchange = function() {
+    document.getElementById('mc-prefix-wrap').style.display = this.value==='si' ? 'block' : 'none';
+  };
+  document.getElementById('modal-carga').classList.add('open');
+}
+
+function openEditCarga() {
+  if (!cargaActual) return;
+  editingCargaId = cargaActual.id;
+  document.getElementById('modal-carga-title').textContent = 'Editar carga';
+  const sel = document.getElementById('mc-cliente');
+  sel.innerHTML = '<option value="">— Selecciona cliente —</option>' +
+    DB.clientes.map(c => `<option value="${c.id}" ${c.id===cargaActual.clienteId?'selected':''}>${c.nombre}</option>`).join('');
+  populatePlantillaSelect(cargaActual.plantilla);
+  document.getElementById('mc-nombre').value  = cargaActual.nombre || '';
+  document.getElementById('mc-fecha').value   = cargaActual.fechaCarga || '';
+  document.getElementById('mc-lote').value    = cargaActual.lote || '';
+  document.getElementById('mc-dias').value    = cargaActual.diasCad || 14;
+  document.getElementById('mc-barcode').value = cargaActual.barcode || 'no';
+  document.getElementById('mc-prefix').value  = cargaActual.barcodePrefix || '';
+  document.getElementById('mc-prefix-wrap').style.display = cargaActual.barcode==='si' ? 'block' : 'none';
+  document.getElementById('mc-delete-btn').style.display = 'inline-flex';
+  document.getElementById('mc-barcode').onchange = function() {
+    document.getElementById('mc-prefix-wrap').style.display = this.value==='si' ? 'block' : 'none';
+  };
+  // Restore tramos
+  const tramos = cargaActual.tramos || [];
+  for (let n=1;n<=4;n++) {
+    const t = tramos[n-1] || {};
+    document.getElementById('tr-desde-'+n).value = t.desde || '';
+    document.getElementById('tr-hasta-'+n).value = t.hasta || '';
+    document.getElementById('tr-fecha-'+n).value = t.fecha || '';
+    document.getElementById('tr-cad-'+n).value   = t.caducidad || '';
+  }
+  document.getElementById('modal-carga').classList.add('open');
+}
+
+function onSelectClienteCarga() {
+  const cl = DB.clientes.find(c => c.id === document.getElementById('mc-cliente').value);
+  if (!cl) return;
+  document.getElementById('mc-dias').value = cl.diasCad;
+  const year = new Date().getFullYear();
+  const nCarga = DB.cargas.filter(c => c.clienteId === cl.id).length + 1;
+  document.getElementById('mc-nombre').value = `Camión ${nCarga} ${cl.nombre} ${year}`;
+  if (cl.plantilla) populatePlantillaSelect(cl.plantilla);
+  recalcTramos();
+}
+
+function populatePlantillaSelect(selected='') {
+  const sel = document.getElementById('mc-plantilla');
+  sel.innerHTML = '<option value="">— Sin plantilla —</option>' +
+    DB.zplTemplates.map(t => `<option value="${t.clave}" ${t.clave===selected?'selected':''}>${t.clave}</option>`).join('');
+}
+
+function recalcTramos() {
+  const dias = parseInt(document.getElementById('mc-dias').value) || 14;
+  for (let n=1;n<=4;n++) {
+    // Auto-fill next tramo's "desde" = this tramo's "hasta" + 1
+    const hastaEl = document.getElementById('tr-hasta-'+n);
+    const hasta = parseInt(hastaEl.value);
+    if (!isNaN(hasta) && hasta > 0 && n < 4) {
+      const nextDesde = document.getElementById('tr-desde-'+(n+1));
+      // Only auto-fill if next desde is empty or was auto-filled
+      if (!nextDesde.value || nextDesde.dataset.auto === 'true') {
+        nextDesde.value = hasta + 1;
+        nextDesde.dataset.auto = 'true';
+      }
+    }
+    // Calculate caducidad for this tramo
+    const f = document.getElementById('tr-fecha-'+n).value;
+    const cadEl = document.getElementById('tr-cad-'+n);
+    if (f) {
+      const d = new Date(f + 'T00:00:00');
+      d.setDate(d.getDate() + dias);
+      cadEl.value = fmtDate(d);
+    } else {
+      cadEl.value = '';
+    }
+  }
+  // Validate no overlaps — highlight errors
+  const tramos = [];
+  for (let n=1;n<=4;n++) {
+    const desde = parseInt(document.getElementById('tr-desde-'+n).value);
+    const hasta = parseInt(document.getElementById('tr-hasta-'+n).value);
+    if (desde && hasta) tramos.push({n, desde, hasta});
+  }
+  // Reset border colors
+  for (let n=1;n<=4;n++) {
+    document.getElementById('tr-desde-'+n).style.borderColor = '';
+    document.getElementById('tr-hasta-'+n).style.borderColor = '';
+  }
+  // Check: hasta >= desde, and no overlap with previous
+  let lastHasta = 0;
+  for (const t of tramos) {
+    const desdeEl = document.getElementById('tr-desde-'+t.n);
+    const hastaEl = document.getElementById('tr-hasta-'+t.n);
+    const bad = t.hasta < t.desde || t.desde <= lastHasta;
+    if (bad) {
+      desdeEl.style.borderColor = 'var(--danger)';
+      hastaEl.style.borderColor = 'var(--danger)';
+    } else {
+      lastHasta = t.hasta;
+    }
+  }
+}
+
+// Keep for backwards compat
+function recalcCadModal() { recalcTramos(); }
+
+async function guardarCarga() {
+  const clienteId = document.getElementById('mc-cliente').value;
+  const nombre    = document.getElementById('mc-nombre').value.trim();
+  if (!clienteId) { alert('Selecciona un cliente'); return; }
+  if (!nombre)    { alert('Pon un nombre a la carga'); return; }
+  const cl = DB.clientes.find(c => c.id === clienteId);
+  const id = editingCargaId || (clienteId.toUpperCase() + '-' + new Date().getFullYear() + '-' + String(Date.now()).slice(-4));
+
+  // Collect tramos (only those with fecha)
+  const tramos = [];
+  for (let n=1;n<=4;n++) {
+    const desde = parseInt(document.getElementById('tr-desde-'+n).value);
+    const hasta = parseInt(document.getElementById('tr-hasta-'+n).value);
+    const fecha = document.getElementById('tr-fecha-'+n).value;
+    const caducidad = document.getElementById('tr-cad-'+n).value;
+    if (fecha && desde && hasta) tramos.push({desde, hasta, fecha, caducidad});
+  }
+
+  const carga = {
+    id,
+    clienteId,
+    clienteNombre: cl ? cl.nombre : clienteId,
+    nombre,
+    fechaCarga:    document.getElementById('mc-fecha').value,
+    lote:          document.getElementById('mc-lote').value.trim(),
+    diasCad:       parseInt(document.getElementById('mc-dias').value) || 14,
+    barcode:       document.getElementById('mc-barcode').value,
+    barcodePrefix: document.getElementById('mc-prefix').value.trim(),
+    plantilla:     document.getElementById('mc-plantilla').value,
+    tramos,
+    piscinaRangos: cargaActual?.piscinaRangos || [],
+    estado:        editingCargaId ? (cargaActual?.estado || 'en_curso') : 'en_curso',
+    creadaEn:      editingCargaId ? (cargaActual?.creadaEn || new Date().toISOString()) : new Date().toISOString(),
+  };
+  if (editingCargaId) {
+    const idx = DB.cargas.findIndex(c => c.id === editingCargaId);
+    if (idx >= 0) DB.cargas[idx] = carga;
+    cargaActual = carga;
+  } else {
+    DB.cargas.push(carga);
+    cargaActual = carga;
+    pallets = [];
+  }
+  saveLocal();
+  closeModal('modal-carga');
+  if (navigator.onLine) {
+    try { await sheetsPost({ action:'guardarCabeceraCarga', carga }); setSyncStatus('ok','Guardado'); }
+    catch(e) { setSyncStatus('pending','Pendiente de sync'); }
+  }
+  goView('pesos');
+}
+
+async function eliminarCarga() {
+  if (!editingCargaId) return;
+  const c = DB.cargas.find(x => x.id === editingCargaId);
+  if (!confirm(`¿Eliminar la carga "${c?.nombre}"?\nEsta acción no se puede deshacer.`)) return;
+  DB.cargas = DB.cargas.filter(x => x.id !== editingCargaId);
+  localStorage.removeItem('pallets_' + editingCargaId);
+  saveLocal();
+  // Borrar en Sheets
+  if (navigator.onLine) {
+    try {
+      await sheetsPost({ action: 'eliminarCarga', cargaId: editingCargaId });
+      setSyncStatus('ok', 'Carga eliminada');
+    } catch(e) {
+      setSyncStatus('pending', 'Pendiente de sync');
+    }
+  }
+  closeModal('modal-carga');
+  cargaActual = null;
+  pallets = [];
+  goView('home');
+}
+
+async function completarCarga() {
+  if (!cargaActual) return;
+  cargaActual.estado = 'completada';
+  const idx = DB.cargas.findIndex(c => c.id === cargaActual.id);
+  if (idx >= 0) DB.cargas[idx] = cargaActual;
+  saveLocal();
+  if (navigator.onLine) {
+    try { await sheetsPost({ action:'actualizarEstadoCarga', cargaId:cargaActual.id, estado:'completada' }); }
+    catch(e) {}
+  }
+  goView('home');
+}
+
+// ════════════════════════════════════════════════════════
+//  PESOS VIEW
+// ════════════════════════════════════════════════════════
+function renderEnvioBanner() {
+  if (!cargaActual) return;
+  const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
+  document.getElementById('pesos-title').textContent = cargaActual.nombre;
+  document.getElementById('pesos-sub').textContent = cl ? cl.nombre : cargaActual.clienteId;
+  document.getElementById('pl-sub').textContent = cargaActual.nombre;
+  const tramos = cargaActual.tramos || [];
+  const tramosText = tramos.length
+    ? tramos.map(t => `P${t.desde}-${t.hasta}: ${fmtDateISO(t.fecha)}`).join(' · ')
+    : '— sin tramos —';
+  document.getElementById('envio-banner').innerHTML = `
+    <div class="epill"><span class="elbl">Cliente</span><span class="eval">${cl?cl.nombre:'—'}</span></div>
+    <div class="epill"><span class="elbl">Lote</span><span class="eval">${cargaActual.lote||'—'}</span></div>
+    <div class="epill"><span class="elbl">Caducidad</span><span class="eval">${cargaActual.diasCad} días</span></div>
+    <div class="epill"><span class="elbl">Plantilla</span><span class="eval">${cargaActual.plantilla||'—'}</span></div>
+    <div class="epill" style="flex-basis:100%"><span class="elbl">Tramos de captura</span><span class="eval" style="font-size:12px">${tramosText}</span></div>
+  `;
+}
+
+function savePiscinaRangos() {
+  if (!cargaActual) return;
+  const rangos = [];
+  for (let n=1;n<=4;n++) {
+    const desde = parseInt(document.getElementById('pr-desde-'+n)?.value);
+    const hasta = parseInt(document.getElementById('pr-hasta-'+n)?.value);
+    const pisc  = document.getElementById('pr-pisc-'+n)?.value.trim();
+    if (pisc && desde && hasta) rangos.push({desde, hasta, pisc});
+  }
+  cargaActual.piscinaRangos = rangos;
+  // Update carga in DB
+  const idx = DB.cargas.findIndex(c => c.id === cargaActual.id);
+  if (idx >= 0) DB.cargas[idx] = cargaActual;
+  saveLocal();
+}
+
+function loadPiscinaRangos() {
+  const rangos = cargaActual?.piscinaRangos || [];
+  for (let n=1;n<=4;n++) {
+    const r = rangos[n-1] || {};
+    const d = document.getElementById('pr-desde-'+n);
+    const h = document.getElementById('pr-hasta-'+n);
+    const p = document.getElementById('pr-pisc-'+n);
+    if (d) d.value = r.desde || '';
+    if (h) h.value = r.hasta || '';
+    if (p) p.value = r.pisc  || '';
+  }
+}
+
+function getPiscinaForPallet(palletNum) {
+  const rangos = cargaActual?.piscinaRangos || [];
+  for (const r of rangos) {
+    if (palletNum >= r.desde && palletNum <= r.hasta) return r.pisc;
+  }
+  return '';
+}
+
+function aplicarPiscinaRangos() {
+  savePiscinaRangos();
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  pallets.forEach((p, i) => {
+    const pisc = getPiscinaForPallet(i+1);
+    if (pisc) {
+      p.piscina = pisc;
+      // Update input if visible
+      const inputs = document.querySelectorAll(`#pcard-${p.id} input[placeholder*="H"]`);
+      inputs.forEach(inp => { if (inp.style.width === '90px') inp.value = pisc; });
+    }
+  });
+  syncPallets();
+  alert(`✅ Piscinas aplicadas a ${pallets.length} pallets`);
+}
+
+function renderPesos() {
+  if (!cargaActual) { goView('home'); return; }
+  renderEnvioBanner();
+  const container = document.getElementById('pallets-list');
+  container.innerHTML = '';
+  const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
+  pallets.forEach((p, i) => renderPalletCard(p, i, cl));
+  // Open only the last non-printed pallet
+  const lastActive = [...pallets].reverse().find(p => !p.printed);
+  if (lastActive) {
+    const body = document.getElementById('pbody-' + lastActive.id);
+    const arrow = document.getElementById('pcard-' + lastActive.id)?.querySelector('.pallet-header span:last-child');
+    if (body) body.style.display = '';
+    if (arrow) arrow.textContent = '▼';
+  }
+  loadPiscinaRangos();
+  updateStatus();
+  checkFinish();
+  scheduleCentralPreview();
+}
+
+function getPalletCaducidad(p) {
+  const fecha = p.fechaCaptura;
+  if (!fecha || fecha === '' || fecha === 'undefined') return '—';
+  const dias = cargaActual?.diasCad || 14;
+  try {
+    const d = new Date(fecha + 'T00:00:00');
+    if (isNaN(d.getTime())) return '—';
+    d.setDate(d.getDate() + dias);
+    return fmtDate(d);
+  } catch(e) { return '—'; }
+}
+
+function renderPalletCard(p, i, cl) {
+  const existing = document.getElementById('pcard-' + p.id);
+  if (existing) existing.remove();
+  const div = document.createElement('div');
+  div.className = 'pallet-card ' + (p.printed ? 'is-done' : 'is-active');
+  div.id = 'pcard-' + p.id;
+
+  const filled   = p.pesos.filter(x => x !== '' && x !== null && x !== undefined && isValid(x)).length;
+  const total    = calcTotal(p.pesos);
+  const peces    = parseInt(p.peces) || 0;
+  const mediaPez = peces > 0 ? total / peces : 0;
+  const mediaKgCaja = filled > 0 ? total / filled : 0;
+  const allOk    = filled === p.cajas && p.pesos.every(x => isValid(x));
+  const hasErr   = p.pesos.some(x => x !== '' && !isValid(x));
+  const calWarn  = cl && getCalibreMin(p.calibre) < cl.calMin;
+  const mediaOut = allOk && peces > 0 && !pesoEnRango(mediaPez, p.calibre);
+  const caducidad = getPalletCaducidad(p);
+
+  // Resolve calibre — try exact ID match, fallback to range match
+  let calibreResolved = p.calibre;
+  const rangos = getCalibreRangos();
+  if (!rangos.find(r => r.id === calibreResolved)) {
+    // Try to find matching range by label or by weight range
+    const total2 = calcTotal(p.pesos);
+    const peces2 = parseInt(p.peces) || 0;
+    if (peces2 > 0 && total2 > 0) {
+      const media2 = total2 / peces2;
+      const match2 = rangos.filter(r => media2 >= r.min && media2 < r.max).sort((a,b) => a.min-b.min)[0];
+      if (match2) calibreResolved = match2.id;
+    } else {
+      calibreResolved = rangos[0]?.id || '';
+    }
+    p.calibre = calibreResolved;
+  }
+
+  const calibreOpts = rangos
+    .map(r => `<option value="${r.id}" ${r.id===calibreResolved?'selected':''}>${r.label}</option>`)
+    .join('');
+
+  div.innerHTML = `
+    <div class="pallet-header" onclick="toggleBody('${p.id}')">
+      <div class="pallet-hdr-left">
+        <span class="pallet-num">${String(i+1).padStart(2,'0')}</span>
+        <span class="pallet-name">Pallet ${i+1} — ${p.cajas} cajas</span>
+        ${p.printed ? '<span class="badge badge-done">✓ Impreso</span>' : '<span class="badge badge-active">Activo</span>'}
+        ${calWarn ? `<span class="badge badge-warn" id="bw-cal-${p.id}">⚠ Calibre bajo</span>` : ''}
+        ${mediaOut ? `<span class="badge badge-warn" id="bw-med-${p.id}">⚠ Peso/pez fuera rango</span>` : ''}
+      </div>
+      <div class="flex gap-12">
+        <span class="mono" style="font-size:13px;color:var(--accent)" id="hdr-total-${p.id}">${total.toFixed(1)} kg</span>
+        <span style="color:var(--text2);font-size:12px;font-family:var(--mono)" id="hdr-media-${p.id}">${mediaPez>0?mediaPez.toFixed(3)+' kg/pez':'—'}</span>
+        <span style="color:var(--text3);font-size:12px">${filled}/${p.cajas}</span>
+        <span style="color:var(--text3)">▼</span>
+      </div>
+    </div>
+    <div class="pallet-body" id="pbody-${p.id}" style="display:none">
+
+      <!-- FILA 1: fecha captura + caducidad + tipo -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;padding:8px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+        <div class="meta-field">
+          <label>Fecha captura</label>
+          <input type="date" value="${p.fechaCaptura}"
+            oninput="palletSet(${i},'fechaCaptura',this.value);updateCaducidadDisplay('${p.id}')">
+        </div>
+        <div class="meta-field">
+          <label>Días cad.</label>
+          <input type="text" value="${cargaActual?.diasCad||14}" readonly
+            style="width:48px;text-align:center;font-family:var(--mono);font-size:13px;padding:4px 6px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--text2)">
+        </div>
+        <div class="meta-field">
+          <label>Caducidad</label>
+          <input type="text" id="cad-display-${p.id}" value="${caducidad}" readonly
+            style="width:110px;font-family:var(--mono);font-size:13px;padding:4px 8px;background:var(--bg);border:1px solid var(--border);border-radius:var(--r);color:var(--accent)">
+        </div>
+        <div class="meta-field">
+          <label>Piscina</label>
+          <input type="text" value="${p.piscina||''}" placeholder="ej. H3-2"
+            style="width:90px;font-family:var(--mono);font-size:13px"
+            oninput="palletSet(${i},'piscina',this.value)">
+        </div>
+        <div class="meta-field">
+          <label>Tipo</label>
+          <select style="font-family:var(--sans);font-size:13px;padding:4px 8px;border-radius:var(--r);border:1px solid var(--border2);background:var(--bg3);color:var(--text);outline:none"
+            onchange="palletSet(${i},'tipo',this.value)">
+            <option value="female" ${(p.tipo||'female')==='female'?'selected':''}>Desovada</option>
+            <option value="triploid" ${p.tipo==='triploid'?'selected':''}>Triploide</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- FILA 2: cajas + peces + calibre -->
+      <div style="display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-bottom:10px;padding:8px 12px;background:var(--bg);border-radius:var(--r);border:1px solid var(--border)">
+        <div class="meta-field">
+          <label>Nº Cajas</label>
+          <input type="number" min="1" max="50" value="${p.cajas}"
+            style="width:68px;text-align:center"
+            oninput="changeCajas(${i},this.value)">
+        </div>
+        <div class="meta-field">
+          <label>Nº Peces</label>
+          <input type="number" min="0" value="${p.peces||''}" placeholder="0"
+            style="width:80px;text-align:center" id="peces-${p.id}"
+            oninput="palletSet(${i},'peces',this.value);refreshStats(${i});autoCalibrar(${i})">
+        </div>
+        <div class="meta-field">
+          <label>Calibre</label>
+          <select class="calibre-select" id="cal-${p.id}"
+            onchange="palletSet(${i},'calibre',this.value);palletSet(${i},'calibreAuto',false);checkCalWarn(${i});refreshStats(${i})">
+            ${calibreOpts}
+          </select>
+        </div>
+        <span style="font-size:11px;color:var(--text3)" id="cal-auto-${p.id}">${p.calibreAuto?'← auto':'← manual'}</span>
+        <div class="cal-warn ${calWarn?'on':''}" id="cal-warn-${p.id}">
+          ⚠ Bajo mínimo cliente (${cl?cl.calMin:'—'} kg)
+        </div>
+      </div>
+
+      <div class="alert alert-danger ${hasErr?'on':''}" id="alert-err-${p.id}">
+        ⚠ Pesos fuera de rango (0,1–99,9 kg)
+      </div>
+
+      <div style="display:flex;gap:16px;align-items:flex-start">
+        <div class="peso-col" id="pgrid-${p.id}">${renderPesoInputs(p,i)}</div>
+        <div style="flex:1;padding-top:2px;display:flex;flex-direction:column">
+
+          <!-- ESTADÍSTICAS en 3 recuadros horizontales -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;text-align:center">
+              <div class="stat-val" id="st-total-${p.id}">${total.toFixed(1)}</div>
+              <div class="stat-lbl">KG TOTAL</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;text-align:center">
+              <div class="stat-val" id="st-fill-${p.id}">${filled}/${p.cajas}</div>
+              <div class="stat-lbl">CAJAS</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:10px 12px;text-align:center">
+              <div class="stat-val" id="st-mpez-${p.id}">${mediaPez>0?mediaPez.toFixed(3):'—'}</div>
+              <div class="stat-lbl">KG/PEZ</div>
+            </div>
+          </div>
+
+          <div class="alert alert-warn ${mediaOut?'on':''}" id="alert-med-${p.id}">
+            ⚠ Peso medio/pez fuera del calibre
+          </div>
+          <div class="alert alert-ok ${allOk&&peces>0&&!mediaOut?'on':''}" id="alert-ok-${p.id}">
+            ✓ Peso medio dentro del calibre
+          </div>
+
+          <!-- Número de pallet grande en el espacio vacío inferior -->
+          <div style="flex:1;display:flex;align-items:center;justify-content:center;min-height:200px;padding-top:140px">
+            <span style="font-size:320px;font-weight:700;color:var(--border2);line-height:0.9;font-family:var(--mono);user-select:none;letter-spacing:-12px">${String(i+1).padStart(2,'0')}</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="pallet-footer">
+        <div></div>
+        <div class="flex gap-8">
+          ${!p.printed
+            ? `<button class="btn btn-danger btn-xs" onclick="removePallet(${i})">Eliminar</button>
+               <button class="btn btn-print" id="btn-print-${p.id}" ${allOk?'':'disabled'} onclick="printPallet(${i})">
+                 🖨 Imprimir pallet ${i+1}
+               </button>`
+            : `<button class="btn btn-secondary btn-sm" onclick="unlockPallet(${i})">✏ Editar y reimprimir</button>`
+          }
+        </div>
+      </div>
+    </div>
+  `;
+  // Insert in correct position (not always at end)
+  const container = document.getElementById('pallets-list');
+  const nextCard = document.getElementById('pcard-' + (pallets[i+1]?.id));
+  if (nextCard) {
+    container.insertBefore(div, nextCard);
+  } else {
+    container.appendChild(div);
+  }
+}
+
+function updateCaducidadDisplay(pid) {
+  const p = pallets.find(x => x.id === pid);
+  if (!p) return;
+  const el = document.getElementById('cad-display-' + pid);
+  if (el) el.value = getPalletCaducidad(p);
+}
+
+function renderPesoInputs(p, i) {
+  return Array.from({length: p.cajas}, (_, c) => {
+    const v = p.pesos[c] || '';
+    const cls = v ? (isValid(v) ? 'filled' : 'error') : '';
+    return `<div class="peso-row">
+      <label>C-${String(c+1).padStart(2,'0')}</label>
+      <input type="number" step="0.1" min="0.1" max="99.9"
+        value="${v}" placeholder="0.0" class="${cls}"
+        data-pi="${i}" data-ci="${c}" data-pid="${p.id}"
+        oninput="updatePeso(${i},${c},this)"
+        onkeydown="navKey(event,${i},${c})">
+      <span class="peso-kg">kg</span>
+    </div>`;
+  }).join('');
+}
+
+function navKey(e, pi, ci) {
+  if (e.key==='ArrowDown'||e.key==='Enter') {
+    e.preventDefault();
+    const next = document.querySelector(`input[data-pi="${pi}"][data-ci="${ci+1}"]`);
+    if (next) { next.focus(); next.select(); }
+    else {
+      const pec = document.getElementById('peces-' + pallets[pi].id);
+      if (pec) { pec.focus(); pec.select(); }
+    }
+  } else if (e.key==='ArrowUp') {
+    e.preventDefault();
+    const prev = document.querySelector(`input[data-pi="${pi}"][data-ci="${ci-1}"]`);
+    if (prev) { prev.focus(); prev.select(); }
+  }
+}
+
+function toggleBody(id) {
+  const b = document.getElementById('pbody-' + id);
+  const card = document.getElementById('pcard-' + id);
+  const isOpen = b.style.display !== 'none';
+  b.style.display = isOpen ? 'none' : '';
+  const arrow = card?.querySelector('.pallet-header span:last-child');
+  if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+}
+
+function palletSet(i, field, val) {
+  pallets[i][field] = val;
+  updateStatus();
+}
+
+function addPallet() {
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  const palletNum = pallets.length + 1;
+
+  // Collapse all previous pallets
+  pallets.forEach(p => {
+    const body = document.getElementById('pbody-' + p.id);
+    if (body) body.style.display = 'none';
+    const hdr = document.getElementById('pcard-' + p.id)?.querySelector('.pallet-header span:last-child');
+    if (hdr) hdr.textContent = '▶';
+  });
+
+  // Find fecha from tramos
+  let fechaCaptura = '';
+  const tramos = cargaActual?.tramos || [];
+  for (const t of tramos) {
+    if (palletNum >= t.desde && palletNum <= t.hasta) {
+      fechaCaptura = t.fecha;
+      break;
+    }
+  }
+  if (!fechaCaptura && pallets.length > 0) {
+    fechaCaptura = pallets[pallets.length-1].fechaCaptura;
+  }
+
+  // Get piscina from rangos or inherit from previous
+  const piscinaFromRango = getPiscinaForPallet(palletNum);
+  const lastPiscina = piscinaFromRango || (pallets.length > 0 ? (pallets[pallets.length-1].piscina || '') : '');
+  const cajas = cl ? cl.cajasPallet : 24;
+  const defaultRango = getCalibreRangos()[0]?.id || 'c2-25';
+  const p = {
+    id: 'p' + palletNum + '_' + cargaActual.id,
+    cajas, fechaCaptura,
+    calibre: defaultRango, calibreAuto: true,
+    tipo: 'female',
+    piscina: lastPiscina,
+    pesos: new Array(cajas).fill(''),
+    peces: '', printed: false,
+  };
+  pallets.push(p);
+  const i = pallets.length - 1;
+  renderPalletCard(p, i, cl);
+  // Open new pallet immediately
+  const body = document.getElementById('pbody-' + p.id);
+  const arrow = document.getElementById('pcard-'+p.id)?.querySelector('.pallet-header span:last-child');
+  if (body) body.style.display = '';
+  if (arrow) arrow.textContent = '▼';
+  // Open the new pallet
+  setTimeout(() => {
+    const card = document.getElementById('pcard-'+p.id);
+    if (card) {
+      const headerH = document.querySelector('.app-header')?.offsetHeight || 52;
+      const top = card.getBoundingClientRect().top + window.scrollY - headerH - 10;
+      window.scrollTo({ top, behavior: 'smooth' });
+    }
+    // Focus first peso input
+    const firstInput = document.querySelector(`input[data-pi="${i}"][data-ci="0"]`);
+    if (firstInput) firstInput.focus();
+  }, 80);
+  syncPallets();
+}
+
+function removePallet(i) {
+  if (!confirm(`¿Eliminar pallet ${i+1}?`)) return;
+  pallets.splice(i, 1);
+  renderPesos();
+  syncPallets();
+}
+
+function changeCajas(i, val) {
+  const n = parseInt(val) || 1;
+  pallets[i].cajas = n;
+  while (pallets[i].pesos.length < n) pallets[i].pesos.push('');
+  pallets[i].pesos.length = n;
+  const grid = document.getElementById('pgrid-' + pallets[i].id);
+  if (grid) grid.innerHTML = renderPesoInputs(pallets[i], i);
+  refreshStats(i);
+}
+
+function updatePeso(pi, ci, input) {
+  const v = input.value;
+  pallets[pi].pesos[ci] = v;
+  input.classList.remove('filled','error');
+  if (v !== '') input.classList.add(isValid(v) ? 'filled' : 'error');
+  refreshStats(pi);
+  // Try auto calibre whenever complete or peces changes
+  const p2 = pallets[pi];
+  const filled2 = p2.pesos.filter(x => x !== '').length;
+  if (filled2 === p2.cajas && p2.pesos.every(x => isValid(x))) {
+    autoCalibrar(pi);
+  }
+}
+
+function autoCalibrar(pi) {
+  const p = pallets[pi];
+  const peces = parseInt(p.peces) || 0;
+  const total = calcTotal(p.pesos);
+  if (peces <= 0 || total <= 0) {
+    const lbl = document.getElementById('cal-auto-' + p.id);
+    if (lbl) lbl.textContent = p.calibreAuto ? '← introduce nº peces' : '← manual';
+    return;
+  }
+  // Only auto-assign if auto mode is on
+  if (!p.calibreAuto) return;
+  const media = total / peces;
+  const match = getCalibreRangos()
+    .filter(r => media >= r.min && media < r.max)
+    .sort((a,b) => a.min - b.min)[0];
+  if (match) {
+    p.calibre = match.id;
+    const sel = document.getElementById('cal-' + p.id);
+    if (sel) sel.value = match.id;
+    const lbl = document.getElementById('cal-auto-' + p.id);
+    if (lbl) lbl.textContent = '← auto (' + match.label + ')';
+    checkCalWarn(pi);
+    refreshStats(pi);
+  }
+}
+
+function checkCalWarn(pi) {
+  const p = pallets[pi];
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  if (!cl) return;
+  const warn = getCalibreMin(p.calibre) < cl.calMin;
+  document.getElementById('cal-warn-' + p.id)?.classList.toggle('on', warn);
+  const bw = document.getElementById('bw-cal-' + p.id);
+  const hdrLeft = document.getElementById('pcard-'+p.id)?.querySelector('.pallet-hdr-left');
+  if (warn && !bw && hdrLeft) {
+    const b = document.createElement('span');
+    b.className='badge badge-warn'; b.id='bw-cal-'+p.id; b.textContent='⚠ Calibre bajo';
+    hdrLeft.appendChild(b);
+  } else if (!warn && bw) bw.remove();
+}
+
+function refreshStats(pi) {
+  const p = pallets[pi];
+  // Normalise pesos — values from localStorage may be strings or numbers
+  const pesosNorm = p.pesos.map(x => (x === '' || x === null || x === undefined) ? '' : String(x));
+  const filled   = pesosNorm.filter(x => x !== '' && isValid(x)).length;
+  const total    = pesosNorm.reduce((s,v) => s + (parseFloat(v)||0), 0);
+  const peces    = parseInt(p.peces) || 0;
+  const mediaPez = peces > 0 ? total/peces : 0;
+  const allOk    = filled === p.cajas && pesosNorm.every(x => isValid(x));
+  const hasErr   = pesosNorm.some(x => x !== '' && !isValid(x));
+  const mediaOut = allOk && peces > 0 && !pesoEnRango(mediaPez, p.calibre);
+
+  const $ = id => document.getElementById(id);
+  if ($('st-total-'+p.id))  $('st-total-'+p.id).textContent  = total.toFixed(1);
+  if ($('st-fill-'+p.id))   $('st-fill-'+p.id).textContent   = `${filled}/${p.cajas}`;
+  if ($('st-mpez-'+p.id))   $('st-mpez-'+p.id).textContent   = mediaPez>0?mediaPez.toFixed(3):'—';
+  if ($('btn-print-'+p.id)) $('btn-print-'+p.id).disabled    = !allOk;
+  $('alert-err-'+p.id)?.classList.toggle('on', hasErr);
+  $('alert-med-'+p.id)?.classList.toggle('on', mediaOut);
+  $('alert-ok-'+p.id)?.classList.toggle('on', allOk&&peces>0&&!mediaOut);
+
+  // Update header
+  const card = $('pcard-'+p.id);
+  if (card) {
+    const hdrKg = $('hdr-total-'+p.id);
+    const hdrMedia = $('hdr-media-'+p.id);
+    if (hdrKg) hdrKg.textContent = total.toFixed(1)+' kg';
+    if (hdrMedia) hdrMedia.textContent = peces>0?(total/peces).toFixed(3)+' kg/pez':'—';
+    // badge media out
+    const bwMed = $('bw-med-'+p.id);
+    const hdrLeft = card.querySelector('.pallet-hdr-left');
+    if (mediaOut && !bwMed && hdrLeft) {
+      const b=document.createElement('span'); b.className='badge badge-warn';
+      b.id='bw-med-'+p.id; b.textContent='⚠ Peso/pez fuera rango';
+      hdrLeft.appendChild(b);
+    } else if (!mediaOut && bwMed) bwMed.remove();
+  }
+  updateStatus();
+  schedulePalletPreview(pi);
+}
+
+function unlockPallet(i) {
+  if (!confirm(`¿Desbloquear pallet ${i+1} para editar y reimprimir?\nLas etiquetas anteriores quedarán anuladas.`)) return;
+  pallets[i].printed = false;
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  document.getElementById('pcard-'+pallets[i].id)?.remove();
+  renderPalletCard(pallets[i], i, cl);
+  checkFinish();
+  syncPallets();
+}
+
+function updateStatus() {
+  if (!cargaActual) return;
+  document.getElementById('st-carga').textContent = cargaActual.nombre || '—';
+  const done = pallets.filter(p=>p.printed).length;
+  document.getElementById('st-pallets').textContent = `${done}/${pallets.length} pallets`;
+  const kg = pallets.reduce((s,p)=>s+calcTotal(p.pesos),0);
+  document.getElementById('st-kg').textContent = `${kg.toFixed(0)} kg`;
+}
+
+function checkFinish() {
+  const all = pallets.length>0 && pallets.every(p=>p.printed);
+  document.getElementById('finish-section').classList.toggle('hidden', !all);
+}
+
+// ════════════════════════════════════════════════════════
+//  PRINT
+// ════════════════════════════════════════════════════════
+function printPallet(pi) {
+  const p = pallets[pi];
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  const tmpl = DB.zplTemplates.find(t => t.clave === cargaActual?.plantilla);
+  const wMm = tmpl?.wMm || 100;
+  const hMm = tmpl?.hMm || 100;
+
+  const labels = p.pesos.map((peso, ci) => {
+    const pesoVal = parseFloat(peso);
+    const pesoDisplay = isNaN(pesoVal) ? '—' : pesoVal.toFixed(1).replace('.', ',');
+    const ean = (cargaActual?.barcode==='si' && !isNaN(pesoVal))
+      ? calcEAN(cargaActual.barcodePrefix||'24151001', pesoVal) : '';
+    const vars = {
+      pallet:    String(pi+1).padStart(2,'0'),
+      caja:      String(ci+1).padStart(2,'0'),
+      calibre:   getCalibreLabel(p.calibre),
+      peso:      pesoDisplay,
+      lote:      cargaActual?.lote || '',
+      captura:   fmtDateISO(p.fechaCaptura),
+      caducidad: getPalletCaducidad(p),
+      cliente:   cl?.producido || '',
+      ggn:       cargaActual?.ggn || '',
+      barcode:   ean,
+    };
+    if (tmpl?.html) return applyLabelVars(tmpl.html, vars);
+    return buildLabelHTML(pi+1, ci+1, peso, p, cl);
+  });
+
+  const printArea = document.getElementById('print-area');
+  printArea.style.display = 'block';
+  printArea.innerHTML = labels.map((lbl,i) =>
+    `<div style="width:${wMm}mm;height:${hMm}mm;position:relative;page-break-after:${i<labels.length-1?'always':'avoid'};overflow:hidden;">${lbl}</div>`
+  ).join('');
+
+  let st = document.getElementById('dyn-print-css');
+  if (!st) { st=document.createElement('style'); st.id='dyn-print-css'; document.head.appendChild(st); }
+  st.textContent = `@media print{@page{size:${wMm}mm ${hMm}mm;margin:0}body *{visibility:hidden!important}#print-area{visibility:visible!important;display:block!important;position:fixed;left:0;top:0}#print-area *{visibility:visible!important}#print-area>div{width:${wMm}mm!important;height:${hMm}mm!important;page-break-after:always}#print-area>div:last-child{page-break-after:avoid}}`;
+
+  setTimeout(()=>{
+    window.print();
+    printArea.style.display = 'none';
+    pallets[pi].printed = true;
+    const card = document.getElementById('pcard-'+pallets[pi].id);
+    if (card) {
+      card.classList.replace('is-active','is-done');
+      document.getElementById('pbody-'+pallets[pi].id).style.display = 'none';
+    }
+    syncPallets(); checkFinish(); updateStatus();
+  }, 150);
+}
+
+function buildLabelHTML(palletNum, cajaNum, peso, pallet, cl) {
+  const pesoVal = parseFloat(peso);
+  const pesoDisplay = isNaN(pesoVal) ? '—' : pesoVal.toFixed(1).replace('.',',');
+  const calibreLabel = getCalibreLabel(pallet.calibre);
+  const ean = cargaActual?.barcode==='si' ? calcEAN(cargaActual.barcodePrefix||'24151001', pesoVal) : '';
+
+  // Check if we have a ZPL template — if so, use CSS-scaled version
+  // For now use HTML rendering
+  const scale = 3.78;
+  const es = cl?.idioma === 'es';
+
+  let html = '<div style="position:absolute;left:0;top:0;width:100%;height:100%;background:white;font-family:Arial,sans-serif;overflow:hidden;">';
+
+  const fields = [
+    {x:56/scale, y:(85-25)/scale, fs:11, bold:false, text: es?'PALLET Nº:':'PALLET Nº:'},
+    {x:207/scale, y:38/scale, fs:18, bold:true, text: String(palletNum).padStart(2,'0'), box:true, bw:147/scale, bh:60/scale},
+    {x:408/scale, y:(85-25)/scale, fs:11, bold:false, text: es?'CAJA Nº:':'BOX Nº:'},
+    {x:552/scale, y:38/scale, fs:18, bold:true, text: String(cajaNum).padStart(2,'0'), box:true, bw:143/scale, bh:60/scale},
+    {x:20, y:28, fs:7.5, text: es?'Trucha Arcoiris, Eviscerada, Calidad Premium':'Rainbow Trout, Head/on & Gutted, Premium Quality'},
+    {x:20, y:36, fs:7.5, text: es?'Producto Fresco ACUICULTURA. Origen España':'Farmed in freshwater. Farmed in Spain Fishfarm'},
+    {x:20, y:44, fs:7.5, text: es?'Lat: Oncorchyncus Mykiss. CODIGO FAO: TRR':'Lat: Oncorchyncus Mykiss. FAO CODE: TRR'},
+    {x:20, y:52, fs:7.5, text: es?'Producido por: Piscifactoria Ind. el Zarzalejo, S.L.':'Farm site: Piscifactoria Ind. el Zarzalejo, S.L.'},
+    {x:20, y:59, fs:7.5, text: es?'EL Jardín (Albacete)/ España':'EL Jardin (Albacete)/ Spain'},
+    {x:20, y:69, fs:7.5, bold:true, text: es?'Calibre:':'SIZE:'},
+    {x:127/scale, y:289/scale, fs:12, bold:true, text: calibreLabel, box:true, bw:210/scale, bh:75/scale},
+    {x:360/scale, y:(341-25)/scale, fs:7.5, text: es?'Peso Neto:':'Net Weight:'},
+    {x:508/scale, y:289/scale, fs:12, bold:true, text: pesoDisplay, box:true, bw:205/scale, bh:75/scale},
+    {x:20, y:84, fs:7.5, text: (es?'LOTE:  ':'LOT:  ') + (cargaActual?.lote||'')},
+    {x:20, y:91, fs:7.5, text: (es?'Fecha captura:  ':'Harvest date:  ') + fmtDateISO(pallet.fechaCaptura)},
+    {x:20, y:98, fs:7.5, text: (es?'Consumo preferente: ':'BEST BEFORE DATE: ') + (pallet.fechaCaducidad || cargaActual?.tramos?.find(t=>parseInt(t.desde)<=palletNum&&palletNum<=parseInt(t.hasta))?.caducidad || '')},
+    {x:20, y:105, fs:7.5, text: es?`Conservar entre ${cl?.temp||'-3/+2'}ºC`:`Please keep it chilled at ${cl?.temp||'-3/+2'}ºC`},
+    {x:20, y:112, fs:7.5, text: (es?'Producto para: ':'Produced for: ') + (cl?.producido||'')},
+    {x:20, y:119, fs:7.5, text: 'GGN: ' + (cargaActual?.ggn||'')},
+  ];
+
+  for (const f of fields) {
+    const s = `position:absolute;left:${f.x}mm;top:${f.y}mm;font-size:${f.fs||7}pt;font-weight:${f.bold?700:400};color:#000;line-height:1.1;white-space:nowrap;`;
+    if (f.box) {
+      html += `<div style="${s}border:2px solid #000;padding:1px 4px;">${f.text}</div>`;
+    } else {
+      html += `<div style="${s}">${f.text}</div>`;
+    }
+  }
+
+  // Sello oval
+  html += `<div style="position:absolute;left:${574/scale}mm;top:${410/scale}mm;width:${139/scale}mm;height:${83/scale}mm;border:1.5px solid #000;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:5.5pt;text-align:center;line-height:1.4;color:#000;">ES<br>1200021/AB<br>CE</div>`;
+
+  // Barcode if needed
+  if (cargaActual?.barcode==='si' && ean) {
+    html += `<div style="position:absolute;left:${110/scale}mm;top:${610/scale}mm;width:${580/scale}mm;height:${130/scale}mm;">${genBarcode(ean)}</div>`;
+  }
+
+  html += '</div>';
+  return html;
+}
+
+// ════════════════════════════════════════════════════════
+//  ZPL → HTML PARSER
+// ════════════════════════════════════════════════════════
+function zplToHtml(zpl) {
+  // 203dpi: 1mm = 8 dots
+  const d2mm = v => (parseFloat(v) / 8).toFixed(3);
+
+  // Parse label dimensions
+  let wMm = 100, hMm = 100;
+  const pwMatch = zpl.match(/\^PW(\d+)/);
+  const llMatch = zpl.match(/\^LL(\d+)/);
+  if (pwMatch) wMm = parseFloat(d2mm(pwMatch[1]));
+  if (llMatch) hMm = parseFloat(d2mm(llMatch[1]));
+
+  // Split into field commands — process ^FO/^FT then collect until ^FS
+  const elements = [];
+  let curX = 0, curY = 0, curFont = {h:28, w:28}, isFT = false;
+
+  // Tokenize by ^ commands
+  const cmds = zpl.split('^').filter(c => c.trim());
+
+  for (let i = 0; i < cmds.length; i++) {
+    const cmd = cmds[i].trim();
+
+    // Field Origin (top-left)
+    if (cmd.startsWith('FO')) {
+      const m = cmd.match(/FO(\d+),(\d+)/);
+      if (m) { curX = parseFloat(m[1]); curY = parseFloat(m[2]); isFT = false; }
+    }
+    // Field Typeset (baseline)
+    else if (cmd.startsWith('FT')) {
+      const m = cmd.match(/FT(\d+),(\d+)/);
+      if (m) { curX = parseFloat(m[1]); curY = parseFloat(m[2]); isFT = true; }
+    }
+    // Font
+    else if (cmd.startsWith('A0N') || cmd.startsWith('ADN') || cmd.startsWith('A0')) {
+      const m = cmd.match(/A[0-9A-Z]+N?,?(\d+),?(\d+)?/);
+      if (m) { curFont = { h: parseFloat(m[1]||28), w: parseFloat(m[2]||m[1]||28) }; }
+    }
+    // Field Data → text element
+    else if (cmd.startsWith('FD')) {
+      const text = cmd.replace(/^FD/, '').replace(/\^FS.*/, '').trim();
+      if (!text) continue;
+      const fontH = curFont.h;
+      // FT uses baseline: top = y - fontH
+      const topDots = isFT ? curY - fontH : curY;
+      elements.push({
+        type: 'text',
+        x: parseFloat(d2mm(curX)),
+        y: parseFloat(d2mm(topDots)),
+        fontMm: parseFloat(d2mm(fontH)) * 0.85, // scale factor for pt
+        text: text.replace(/\^FS$/, '').replace(/&/g,'&amp;').replace(/</g,'&lt;')
+      });
+    }
+    // Graphic Box
+    else if (cmd.startsWith('GB')) {
+      const m = cmd.match(/GB(\d+),(\d+),(\d+)/);
+      if (m) {
+        elements.push({
+          type: 'box',
+          x: parseFloat(d2mm(curX)),
+          y: parseFloat(d2mm(curY)),
+          w: parseFloat(d2mm(m[1])),
+          h: parseFloat(d2mm(m[2])),
+          lw: Math.max(0.3, parseFloat(d2mm(m[3])))
+        });
+      }
+    }
+    // Graphic Ellipse
+    else if (cmd.startsWith('GE')) {
+      const m = cmd.match(/GE(\d+),(\d+),(\d+)/);
+      if (m) {
+        elements.push({
+          type: 'ellipse',
+          x: parseFloat(d2mm(curX)),
+          y: parseFloat(d2mm(curY)),
+          w: parseFloat(d2mm(m[1])),
+          h: parseFloat(d2mm(m[2])),
+          lw: Math.max(0.3, parseFloat(d2mm(m[3])))
+        });
+      }
+    }
+    // Barcode EAN
+    else if (cmd.startsWith('BEN') || cmd.startsWith('BE')) {
+      const m = cmd.match(/BEN?,(\d+)/);
+      elements.push({
+        type: 'barcode',
+        x: parseFloat(d2mm(curX)),
+        y: parseFloat(d2mm(curY)),
+        h: m ? parseFloat(d2mm(m[1])) : 15,
+        w: parseFloat(d2mm(pwMatch ? parseFloat(pwMatch[1]) - curX : 700))
+      });
+    }
+  }
+
+  // Detect oval text (ES / 1200021/AB / CE) from small text elements near ellipse
+  // They'll be rendered inside the ellipse automatically
+
+  // Build HTML
+  let html = `<div style="position:relative;width:${wMm}mm;height:${hMm}mm;background:white;font-family:Arial,sans-serif;overflow:hidden;">`;
+
+  // Sort: boxes first, then ellipses, then text, then barcode
+  const order = {box:0, ellipse:1, text:2, barcode:3};
+  elements.sort((a,b) => order[a.type] - order[b.type]);
+
+  // Track ellipses to skip text inside them (we add content manually)
+  const ellipses = elements.filter(e => e.type === 'ellipse');
+
+  for (const el of elements) {
+    if (el.type === 'box') {
+      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;width:${el.w}mm;height:${el.h}mm;border:${el.lw}mm solid #000;box-sizing:border-box;"></div>`;
+    }
+    else if (el.type === 'ellipse') {
+      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;width:${el.w}mm;height:${el.h}mm;border:${el.lw}mm solid #000;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2mm;line-height:1.3;color:#000;box-sizing:border-box;">ES<br>1200021/AB<br>CE</div>`;
+    }
+    else if (el.type === 'text') {
+      // Skip text that falls inside an ellipse (it's rendered in the ellipse div)
+      const inEllipse = ellipses.some(e =>
+        el.x >= e.x && el.x <= e.x+e.w && el.y >= e.y && el.y <= e.y+e.h
+      );
+      if (inEllipse) continue;
+
+      // Replace ZPL variable placeholders with app variables
+      let text = el.text;
+
+      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;font-size:${el.fontMm}mm;color:#000;line-height:1;white-space:nowrap;">${text}</div>`;
+    }
+    else if (el.type === 'barcode') {
+      // Placeholder — replaced with real barcode when printing
+      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;width:${el.w}mm;height:${el.h}mm;" data-barcode="true"></div>`;
+    }
+  }
+
+  html += '</div>';
+  return { html, wMm, hMm, hasBarcode: elements.some(e => e.type === 'barcode') };
+}
+
+// Apply data variables to parsed HTML template
+function applyLabelVars(htmlTemplate, vars) {
+  // Find text divs and replace variable patterns
+  return htmlTemplate
+    .replace(/\{PALLET\}/g, vars.pallet || '00')
+    .replace(/\{CAJA\}/g,   vars.caja   || '00')
+    .replace(/\{CALIBRE\}/g,vars.calibre || '')
+    .replace(/\{PESO\}/g,   vars.peso    || '')
+    .replace(/\{LOTE\}/g,   vars.lote    || '')
+    .replace(/\{CAPTURA\}/g,vars.captura || '')
+    .replace(/\{CADUCIDAD\}/g,vars.caducidad || '')
+    .replace(/\{CLIENTE\}/g,vars.cliente || '')
+    .replace(/\{GGN\}/g,    vars.ggn     || '')
+    .replace(/data-barcode="true"><\/div>/g,
+      vars.barcode
+        ? `data-barcode="true">${genBarcode(vars.barcode)}</div>`
+        : 'data-barcode="true"></div>');
+}
+
+function calcEAN(prefix, peso) {
+  const pi = Math.round((parseFloat(peso)||0)*100);
+  const b12 = (prefix+String(pi).padStart(4,'0')).slice(0,12);
+  let s=0; for(let i=0;i<12;i++) s+=parseInt(b12[i])*(i%2===0?1:3);
+  return b12+((10-(s%10))%10);
+}
+
+function genBarcode(code) {
+  const L=[[0,0,0,1,1,0,1],[0,0,1,1,0,0,1],[0,0,1,0,0,1,1],[0,1,1,1,1,0,1],[0,1,0,0,0,1,1],[0,1,1,0,0,0,1],[0,1,0,1,1,1,1],[0,1,1,1,0,1,1],[0,1,1,0,1,1,1],[0,0,0,1,0,1,1]];
+  const G=L.map(p=>p.map(b=>1-b).reverse());
+  const R=L.map(p=>p.map(b=>1-b));
+  const PT=['LLLLLL','LLGLGG','LLGGLG','LLGGGL','LGLLGG','LGGLLG','LGGGLL','LGLGLG','LGLGGL','LGGLGL'];
+  if(code.length!==13) return '';
+  const d=code.split('').map(Number);
+  const pt=PT[d[0]];
+  let bars=[[1,0,1]];
+  for(let i=0;i<6;i++) bars.push(pt[i]==='L'?L[d[i+1]]:G[d[i+1]]);
+  bars.push([0,1,0,1,0]);
+  for(let i=0;i<6;i++) bars.push(R[d[i+7]]);
+  bars.push([1,0,1]);
+  const flat=bars.flat(); const bw=100/flat.length;
+  let svg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%">`;
+  let x=0;
+  for(const bit of flat){if(bit)svg+=`<rect x="${x.toFixed(2)}" y="0" width="${bw.toFixed(2)}" height="82" fill="black"/>`;x+=bw;}
+  svg+=`<text x="50" y="95" text-anchor="middle" font-family="Arial" font-size="7" fill="black">${code.split('').join(' ')}</text></svg>`;
+  return svg;
+}
+
+// ── Label preview — central panel ────────────────────────
+let centralPreviewTimer = null;
+
+function scheduleCentralPreview() {
+  clearTimeout(centralPreviewTimer);
+  centralPreviewTimer = setTimeout(() => renderCentralPreview(), 1500);
+}
+
+// Keep old name as alias so existing calls work
+function schedulePalletPreview(pi) { scheduleCentralPreview(); }
+
+async function renderCentralPreview() {
+  const el = document.getElementById('envio-label-preview');
+  const lbl = document.getElementById('preview-caja-label');
+  if (!el) return;
+
+  if (!cargaActual?.plantilla) {
+    el.innerHTML = '<span style="color:#999;font-size:11px;text-align:center;padding:8px">Asigna una plantilla<br>a esta carga</span>';
+    return;
+  }
+  const tmpl = DB.zplTemplates.find(t => t.clave === cargaActual.plantilla);
+  if (!tmpl) {
+    el.innerHTML = '<span style="color:#e85c4a;font-size:11px;text-align:center;padding:8px">Plantilla no encontrada</span>';
+    return;
+  }
+
+  // Use last active pallet with at least one peso
+  const activePallet = [...pallets].reverse().find(p => !p.printed) || pallets[pallets.length-1];
+  if (!activePallet) return;
+  const pi = pallets.indexOf(activePallet);
+  const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
+  const peso = activePallet.pesos.find(x => isValid(x)) || '0';
+  const pesoDisplay = String(parseFloat(peso).toFixed(1)).replace('.', ',');
+  const caducidad = getPalletCaducidad(activePallet);
+
+  if (lbl) lbl.textContent = `caja 01 · pallet ${String(pi+1).padStart(2,'0')}`;
+
+  let zpl = tmpl.zpl
+    .replace(/{PALLET}/g, String(pi+1).padStart(2,'0'))
+    .replace(/{CAJA}/g, '01')
+    .replace(/{CALIBRE}/g, getCalibreLabel(activePallet.calibre))
+    .replace(/{PESO}/g, pesoDisplay)
+    .replace(/{LOTE}/g, cargaActual.lote || '—')
+    .replace(/{CAPTURA}/g, fmtDateISO(activePallet.fechaCaptura))
+    .replace(/{CADUCIDAD}/g, caducidad)
+    .replace(/{CLIENTE}/g, cl?.producido || '')
+    .replace(/{GGN}/g, cargaActual.ggn || '')
+    .replace(/{BARCODE}/g, cargaActual.barcode === 'si'
+      ? calcEAN(cargaActual.barcodePrefix || '24151001', parseFloat(peso))
+      : '');
+
+  el.innerHTML = '<span style="color:#999;font-size:11px">Actualizando...</span>';
+  try {
+    const encoded = encodeURIComponent(zpl);
+    const url = `https://api.labelary.com/v1/printers/8dpmm/labels/3.94x3.94/0/${encoded}`;
+    const resp = await fetch(url, { headers: { Accept: 'image/png' } });
+    if (resp.ok) {
+      const blob = await resp.blob();
+      const imgUrl = URL.createObjectURL(blob);
+      el.innerHTML = `<img src="${imgUrl}" style="max-width:100%;border-radius:3px;display:block" alt="Preview etiqueta">`;
+    } else {
+      el.innerHTML = `<span style="color:#e85c4a;font-size:11px">Error ${resp.status}</span>`;
+    }
+  } catch(err) {
+    el.innerHTML = '<span style="color:#999;font-size:11px;text-align:center;padding:8px">Sin conexión<br>para preview</span>';
+  }
+}
+
+// Keep old function as alias
+async function renderPalletPreview(pi) { renderCentralPreview(); }
+let plIdioma = null; // null = use client idioma, 'es' or 'en' = override
+
+// ════════════════════════════════════════════════════════
+//  BALANCE DE MASAS
+// ════════════════════════════════════════════════════════
+function getBalanceData() {
+  return JSON.parse(localStorage.getItem('balance_' + (cargaActual?.id||'')) || '{}');
+}
+function saveBalance() {
+  if (!cargaActual) return;
+  const data = getBalanceData();
+  data.fueraPeso  = parseInt(document.getElementById('bal-fuera-peso')?.value) || 0;
+  data.desechadas = parseInt(document.getElementById('bal-desechadas')?.value) || 0;
+  const piscinas = getPiscinasAgrupadas();
+  data.muestras = {};
+  for (const pisc of Object.keys(piscinas)) {
+    const piscId = pisc.replace(/[^a-zA-Z0-9]/g,'_');
+    data.muestras[piscId] = {
+      nMuestra:  parseInt(document.getElementById('bm-n-'+piscId)?.value)    || 10,
+      pesoVivo:  parseFloat(document.getElementById('bm-vivo-'+piscId)?.value)  || 0,
+      pesoEvisc: parseFloat(document.getElementById('bm-evisc-'+piscId)?.value) || 0,
+    };
+  }
+  localStorage.setItem('balance_' + cargaActual.id, JSON.stringify(data));
+}
+function getPiscinasAgrupadas() {
+  const map = {};
+  pallets.forEach((p, i) => {
+    const pisc = p.piscina || '(sin piscina)';
+    if (!map[pisc]) map[pisc] = { pallets:[], totalKg:0, totalUds:0 };
+    map[pisc].pallets.push(i+1);
+    map[pisc].totalKg  += calcTotal(p.pesos);
+    map[pisc].totalUds += parseInt(p.peces) || 0;
+  });
+  return map;
+}
+function renderBalance() {
+  if (!cargaActual) return;
+  document.getElementById('balance-sub').textContent = cargaActual.nombre;
+  const data = getBalanceData();
+  const piscinas = getPiscinasAgrupadas();
+  const muestras = data.muestras || {};
+  let totalKg=0, totalUds=0, html='';
+  for (const [pisc, info] of Object.entries(piscinas)) {
+    totalKg  += info.totalKg;
+    totalUds += info.totalUds;
+    const piscId = pisc.replace(/[^a-zA-Z0-9]/g,'_');
+    const m = muestras[piscId] || {nMuestra:10, pesoVivo:0, pesoEvisc:0};
+    const mediaVivo  = m.nMuestra>0 ? (m.pesoVivo/m.nMuestra).toFixed(3)   : '—';
+    const mediaEvisc = m.nMuestra>0 ? (m.pesoEvisc/m.nMuestra).toFixed(3)  : '—';
+    const merma      = m.pesoVivo>0 ? ((m.pesoVivo-m.pesoEvisc)/m.pesoVivo*100).toFixed(2) : '—';
+    html += `<div class="card" style="margin-bottom:12px">
+      <div class="card-title" style="display:flex;justify-content:space-between;align-items:center">
+        <span>Piscina: ${pisc}</span>
+        <span style="font-weight:400;font-size:11px;color:var(--text2)">Pallets: ${info.pallets.join(', ')}</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Datos reales (pallets)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:10px;text-align:center">
+              <div class="stat-val">${info.totalKg.toFixed(1)}</div><div class="stat-lbl">Kg eviscerados</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:10px;text-align:center">
+              <div class="stat-val">${info.totalUds||'—'}</div><div class="stat-lbl">Unidades</div>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Muestra</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:8px">
+            <div class="field"><label>Nº truchas</label>
+              <input type="number" id="bm-n-${piscId}" min="1" value="${m.nMuestra}"
+                style="font-family:var(--mono);font-size:14px;text-align:center" oninput="saveBalance();recalcMuestra('${piscId}')">
+            </div>
+            <div class="field"><label>Peso vivo (kg)</label>
+              <input type="number" id="bm-vivo-${piscId}" min="0" step="0.01" value="${m.pesoVivo||''}" placeholder="0.00"
+                style="font-family:var(--mono);font-size:14px;text-align:center" oninput="saveBalance();recalcMuestra('${piscId}')">
+            </div>
+            <div class="field"><label>Peso evisc. (kg)</label>
+              <input type="number" id="bm-evisc-${piscId}" min="0" step="0.01" value="${m.pesoEvisc||''}" placeholder="0.00"
+                style="font-family:var(--mono);font-size:14px;text-align:center" oninput="saveBalance();recalcMuestra('${piscId}')">
+            </div>
+          </div>
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:8px;text-align:center">
+              <div class="stat-val" id="bm-media-vivo-${piscId}">${mediaVivo}</div><div class="stat-lbl">Media vivo</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:8px;text-align:center">
+              <div class="stat-val" id="bm-media-evisc-${piscId}">${mediaEvisc}</div><div class="stat-lbl">Media evisc.</div>
+            </div>
+            <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:8px;text-align:center">
+              <div class="stat-val" id="bm-merma-${piscId}">${merma}${merma!=='—'?'%':''}</div><div class="stat-lbl">% Merma</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+  document.getElementById('balance-piscinas').innerHTML = html || '<div class="card" style="text-align:center;color:var(--text3);padding:24px">Añade pallets con piscina asignada</div>';
+  document.getElementById('bal-total-kg').textContent  = totalKg.toFixed(1);
+  document.getElementById('bal-total-uds').textContent = totalUds||'—';
+  document.getElementById('bal-fuera-peso').value  = data.fueraPeso  || 0;
+  document.getElementById('bal-desechadas').value  = data.desechadas || 0;
+}
+function recalcMuestra(piscId) {
+  const n     = parseFloat(document.getElementById('bm-n-'+piscId)?.value)    || 0;
+  const vivo  = parseFloat(document.getElementById('bm-vivo-'+piscId)?.value)  || 0;
+  const evisc = parseFloat(document.getElementById('bm-evisc-'+piscId)?.value) || 0;
+  const mV = n>0?(vivo/n).toFixed(3):'—';
+  const mE = n>0?(evisc/n).toFixed(3):'—';
+  const mer= vivo>0?((vivo-evisc)/vivo*100).toFixed(2)+'%':'—';
+  const el = id => document.getElementById(id);
+  if(el('bm-media-vivo-'+piscId))  el('bm-media-vivo-'+piscId).textContent  = mV;
+  if(el('bm-media-evisc-'+piscId)) el('bm-media-evisc-'+piscId).textContent = mE;
+  if(el('bm-merma-'+piscId))       el('bm-merma-'+piscId).textContent       = mer;
+}
+function printBalance() {
+  const data = getBalanceData();
+  const piscinas = getPiscinasAgrupadas();
+  const muestras = data.muestras || {};
+  let totalKg=0, totalUds=0;
+
+  let piscinasHtml = '';
+  for (const [pisc, info] of Object.entries(piscinas)) {
+    totalKg += info.totalKg;
+    totalUds += info.totalUds;
+    const piscId = pisc.replace(/[^a-zA-Z0-9]/g,'_');
+    const m = muestras[piscId] || {nMuestra:10, pesoVivo:0, pesoEvisc:0};
+    const mV  = m.nMuestra>0 ? (m.pesoVivo/m.nMuestra).toFixed(3)  : '—';
+    const mE  = m.nMuestra>0 ? (m.pesoEvisc/m.nMuestra).toFixed(3) : '—';
+    const mer = m.pesoVivo>0 ? ((m.pesoVivo-m.pesoEvisc)/m.pesoVivo*100).toFixed(2)+'%' : '—';
+
+    piscinasHtml += `
+      <div style="margin-bottom:20px">
+        <div style="margin-bottom:6px">
+          <span style="font-size:14px;font-weight:700;color:#000">Piscina ${pisc}</span>
+          <span style="font-size:10px;color:#bbb;margin-left:10px">Pallets: ${info.pallets.join(', ')}</span>
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:11px">
+          <thead>
+            <tr style="background:#f0f0f0">
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Kg eviscerados</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Unidades</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Nº muestra</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Peso vivo (kg)</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Peso evisc. (kg)</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">Media vivo / evisc.</th>
+              <th style="border:1px solid #ccc;padding:5px 8px;text-align:left">% Merma</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace;font-weight:600">${info.totalKg.toFixed(1)}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace;font-weight:600">${info.totalUds||'—'}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace">${m.nMuestra}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace">${m.pesoVivo||0}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace">${m.pesoEvisc||0}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace">${mV} / ${mE}</td>
+              <td style="border:1px solid #ddd;padding:5px 8px;font-family:monospace;font-weight:700;color:#1a7a4a">${mer}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>`;
+  }
+
+  const printDiv = document.createElement('div');
+  printDiv.className = 'pl-printable';
+  printDiv.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px">
+      <div>
+        <div style="font-size:18px;font-weight:700">Balance de Masas</div>
+        <div style="font-size:11px;color:#555">${cargaActual?.nombre||''} — ${new Date().toLocaleDateString()}</div>
+      </div>
+      <div style="font-size:10px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
+    </div>
+
+    ${piscinasHtml}
+
+    <div style="margin-top:16px;border-top:2px solid #000;padding-top:12px">
+      <div style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#1a7a4a;margin-bottom:8px">Totales</div>
+      <table style="width:50%;border-collapse:collapse;font-size:11px">
+        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Kg totales eviscerados</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace;font-weight:700">${totalKg.toFixed(1)}</td></tr>
+        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Unidades totales evisceradas</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace;font-weight:700">${totalUds||'—'}</td></tr>
+        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Uds. fuera de peso (congeladas)</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace">${data.fueraPeso||0}</td></tr>
+        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Uds. desechadas</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace">${data.desechadas||0}</td></tr>
+      </table>
+    </div>`;
+
+  document.body.appendChild(printDiv);
+  let st = document.getElementById('dyn-print-css');
+  if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
+  st.textContent = `@media print{
+    @page{size:A4;margin:12mm}
+    body{margin:0!important;padding:0!important;height:auto!important}
+    body > *:not(.pl-printable){display:none!important}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
+    .pl-printable *{visibility:visible!important}
+  }`;
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.body.removeChild(printDiv);
+      if(st) st.textContent='';
+    },500);
+  },100);
+}
+
+function regenerarHTML() {
+  const zpl = document.getElementById('zpl-editor').value.trim();
+  if (!zpl) { alert('El editor ZPL está vacío'); return; }
+  try {
+    const parsed = zplToHtml(zpl);
+    const idx = DB.zplTemplates.findIndex(t => t.clave === zplTabActual);
+    if (idx >= 0) {
+      DB.zplTemplates[idx].html = parsed.html;
+      DB.zplTemplates[idx].wMm = parsed.wMm;
+      DB.zplTemplates[idx].hMm = parsed.hMm;
+      DB.zplTemplates[idx].hasBarcode = parsed.hasBarcode;
+      saveLocal();
+      alert(`✅ HTML regenerado para "${zplTabActual}"\nDimensiones: ${parsed.wMm}x${parsed.hMm}mm\nCódigo de barras: ${parsed.hasBarcode?'Sí':'No'}`);
+    } else {
+      alert('Guarda la plantilla primero');
+    }
+  } catch(e) {
+    alert('Error al parsear el ZPL: ' + e.message);
+  }
+}
+
+function setPlIdioma(lang) {
+  plIdioma = lang;
+  document.getElementById('pl-lang-es').classList.toggle('active', lang==='es');
+  document.getElementById('pl-lang-en').classList.toggle('active', lang==='en');
+  renderPackingList();
+}
+
+function printPackingList() {
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  const es = (plIdioma || cl?.idioma || 'es') === 'es';
+  const table = document.getElementById('pl-table').outerHTML;
+
+  const printDiv = document.createElement('div');
+  printDiv.className = 'pl-printable';
+  printDiv.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:10px">
+      <div style="font-size:18px;font-weight:700">Packing List</div>
+      <div style="font-size:10px;color:#555;text-align:right">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
+    </div>
+    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a8a5a;margin-bottom:6px">${es?'Datos del envío':'Shipment details'}</div>
+    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #ddd">
+      <div><div style="font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.04em">${es?'Carga':'Load'}</div><div style="font-size:12px;font-weight:400">${cargaActual?.nombre||'—'}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.04em">${es?'Cliente':'Customer'}</div><div style="font-size:12px;font-weight:400">${cl?cl.nombre:'—'}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.04em">Lote / Lot</div><div style="font-size:12px;font-weight:400;font-family:monospace">${cargaActual?.lote||'—'}</div></div>
+      <div><div style="font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.04em">${es?'Caducidad':'Best before'}</div><div style="font-size:12px;font-weight:400">${cargaActual?.diasCad||'—'} ${es?'días':'days'}</div></div>
+    </div>
+    ${table}
+    <div style="margin-top:10px;font-size:9px;color:#999">${es?'Generado el':'Generated on'} ${new Date().toLocaleDateString()}</div>`;
+
+  const style = document.createElement('style');
+  style.textContent = `
+    .pl-printable{font-family:Arial,sans-serif}
+    .pl-printable table{width:100%;border-collapse:collapse}
+    .pl-printable th{background:#f0f0f0;border:1px solid #ccc;padding:4px 6px;text-align:left;font-size:11px}
+    .pl-printable td{border:1px solid #ccc;padding:3px 6px;font-size:11px}
+    .pl-printable .total-row td{font-weight:700;background:#f9f9f9;border:1px solid #ccc;border-top:2px solid #666}
+    .pl-printable .warn-row td{color:#c07000}
+    .pl-printable .r{text-align:right}`;
+
+  document.body.appendChild(style);
+  document.body.appendChild(printDiv);
+
+  let st = document.getElementById('dyn-print-css');
+  if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
+  st.textContent = `@media print{
+    @page{size:A4;margin:10mm}
+    body{margin:0!important;padding:0!important;height:auto!important;overflow:visible!important}
+    body > *:not(.pl-printable){display:none!important}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0}
+    .pl-printable *{visibility:visible!important}
+  }`;
+
+  setTimeout(()=>{
+    window.print();
+    setTimeout(()=>{
+      document.body.removeChild(printDiv);
+      document.body.removeChild(style);
+      if(st) st.textContent='';
+    },500);
+  },100);
+}
+
+function renderPackingList() {
+  if (!cargaActual) return;
+  const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
+  const es = (plIdioma || cl?.idioma || 'es') === 'es';
+
+  // Sync toggle buttons to current idioma
+  const langEs = document.getElementById('pl-lang-es');
+  const langEn = document.getElementById('pl-lang-en');
+  if (langEs && langEn) {
+    if (!plIdioma) {
+      // Set default from client idioma
+      plIdioma = cl?.idioma || 'es';
+      langEs.classList.toggle('active', plIdioma==='es');
+      langEn.classList.toggle('active', plIdioma==='en');
+    }
+  }
+
+  // Bilingual column headers
+  const h = {
+    pallet:   es ? 'Pallet'          : 'Pallet',
+    calibre:  es ? 'Calibre'         : 'Size',
+    tipo:     es ? 'Tipo'            : 'Type',
+    captura:  es ? 'F. Captura'      : 'Harvest date',
+    cajas:    es ? 'Cajas'           : 'Boxes',
+    kg:       es ? 'Kg'              : 'Kg',
+    peces:    es ? 'Nº Peces'        : 'No. Fish',
+    kgud:     es ? 'Kg/Unidad'       : 'Kg/Unit',
+  };
+
+  const tipoLabel = (tipo) => {
+    if (tipo === 'triploid') return es ? 'Triploide' : 'Triploid';
+    return es ? 'Desovada' : 'Female';
+  };
+
+  // Header card
+  const tramos = cargaActual.tramos || [];
+  const tramosText = tramos.map(t =>
+    `P${t.desde}-${t.hasta}: ${fmtDateISO(t.fecha)} (cad. ${t.caducidad||'—'})`
+  ).join(' · ');
+
+  document.getElementById('pl-header').innerHTML = `
+    <div class="card-title">${es?'Datos del envío':'Shipment details'}</div>
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:${tramos.length?'10px':'0'}">
+      <div class="epill"><span class="elbl">${es?'Carga':'Load'}</span><span class="eval">${cargaActual.nombre}</span></div>
+      <div class="epill"><span class="elbl">${es?'Cliente':'Customer'}</span><span class="eval">${cl?cl.nombre:'—'}</span></div>
+      <div class="epill"><span class="elbl">Lote / Lot</span><span class="eval">${cargaActual.lote||'—'}</span></div>
+      <div class="epill"><span class="elbl">${es?'Caducidad':'Best before'}</span><span class="eval">${cargaActual.diasCad} ${es?'días':'days'}</span></div>
+      <div class="epill"><span class="elbl">GGN</span><span class="eval">${cargaActual.ggn||'—'}</span></div>
+    </div>
+    ${tramos.length ? `<div style="font-size:11px;color:var(--text2);margin-top:4px"><span style="color:var(--text3);text-transform:uppercase;font-size:10px;letter-spacing:.04em">${es?'Tramos':'Batches'}: </span>${tramosText}</div>` : ''}`;
+
+  let totCajas=0, totKg=0, totPeces=0;
+  const rows = pallets.map((p,i) => {
+    const kg    = calcTotal(p.pesos);
+    const peces = parseInt(p.peces) || 0;
+    const media = peces > 0 ? (kg/peces).toFixed(3) : '—';
+    totCajas += p.cajas; totKg += kg; totPeces += peces;
+    const warn = cl && getCalibreMin(p.calibre) < cl.calMin;
+    return `<tr class="${warn?'warn-row':''}">
+      <td>${i+1}</td>
+      <td>${getCalibreLabel(p.calibre)}${warn?' ⚠':''}</td>
+      <td>${tipoLabel(p.tipo)}</td>
+      <td>${fmtDateISO(p.fechaCaptura)}</td>
+      <td class="r">${p.cajas}</td>
+      <td class="r">${kg.toFixed(1)}</td>
+      <td class="r">${peces||'—'}</td>
+      <td class="r">${media}</td>
+    </tr>`;
+  }).join('');
+
+  document.getElementById('pl-table').innerHTML = `
+    <thead><tr>
+      <th>${h.pallet}</th><th>${h.calibre}</th><th>${h.tipo}</th>
+      <th>${h.captura}</th><th>${h.cajas}</th><th>${h.kg}</th>
+      <th>${h.peces}</th><th>${h.kgud}</th>
+    </tr></thead>
+    <tbody>${rows}</tbody>
+    <tfoot><tr class="total-row">
+      <td>TOTAL</td><td>—</td><td>—</td><td>—</td>
+      <td class="r">${totCajas}</td>
+      <td class="r">${totKg.toFixed(1)}</td>
+      <td class="r">${totPeces||'—'}</td>
+      <td class="r">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
+    </tr></tfoot>`;
+}
+
+// ════════════════════════════════════════════════════════
+//  ETIQUETAS / ZPL
+// ════════════════════════════════════════════════════════
+function renderEtiquetas() {
+  const tabs = document.getElementById('zpl-tabs');
+  const layout = document.getElementById('zpl-layout');
+  const empty = document.getElementById('zpl-empty');
+
+  if (!DB.zplTemplates.length) {
+    tabs.innerHTML=''; layout.style.display='none'; empty.style.display='block';
+    zplTabActual = null;
+    return;
+  }
+  empty.style.display = 'none';
+  layout.style.display = 'grid';
+
+  // Ensure zplTabActual is valid
+  if (!zplTabActual || !DB.zplTemplates.find(t => t.clave===zplTabActual)) {
+    zplTabActual = DB.zplTemplates[0].clave;
+  }
+
+  tabs.innerHTML = DB.zplTemplates.map(t =>
+    `<button class="zpl-tab ${t.clave===zplTabActual?'active':''}" onclick="selectZplTab('${t.clave}')">${t.clave}</button>`
+  ).join('');
+
+  // Load current tab content into editor
+  const current = DB.zplTemplates.find(t => t.clave===zplTabActual);
+  if (current) {
+    document.getElementById('zpl-nombre').value = current.clave;
+    document.getElementById('zpl-editor').value = current.zpl;
+  }
+}
+
+function selectZplTab(clave) {
+  zplTabActual = clave;
+  const t = DB.zplTemplates.find(x => x.clave===clave);
+  document.getElementById('zpl-nombre').value = clave;
+  document.getElementById('zpl-editor').value = t ? t.zpl : '';
+  document.querySelectorAll('.zpl-tab').forEach(b => b.classList.toggle('active', b.textContent===clave));
+  previewZPL();
+}
+
+function nuevaPlantilla() {
+  zplTabActual = '__nueva__';
+  document.getElementById('zpl-nombre').value = '';
+  document.getElementById('zpl-editor').value = '';
+  document.getElementById('zpl-preview').innerHTML = '<div class="zpl-preview-placeholder">Escribe ZPL y pulsa preview</div>';
+  document.getElementById('zpl-layout').style.display = 'grid';
+  document.getElementById('zpl-empty').style.display = 'none';
+}
+
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(previewZPL, 1500);
+}
+
+async function previewZPL() {
+  let zpl = document.getElementById('zpl-editor').value.trim();
+  if (!zpl) return;
+  // Replace variables with sample data
+  zpl = zpl
+    .replace(/{PALLET}/g,'03').replace(/{CAJA}/g,'12')
+    .replace(/{CALIBRE}/g,'2-3 Kg').replace(/{PESO}/g,'21,6')
+    .replace(/{LOTE}/g,'OV-05-26').replace(/{CAPTURA}/g,'07/05/2026')
+    .replace(/{CADUCIDAD}/g,'21/05/2026').replace(/{CLIENTE}/g,'MOWI Poland S.A.')
+    .replace(/{GGN}/g,'4052852774918').replace(/{BARCODE}/g,'241510012160');
+
+  const prev = document.getElementById('zpl-preview');
+  prev.innerHTML = '<div class="zpl-preview-placeholder">Generando preview...</div>';
+  try {
+    const encoded = encodeURIComponent(zpl);
+    const url = `https://api.labelary.com/v1/printers/8dpmm/labels/3.94x3.94/0/${encoded}`;
+    const resp = await fetch(url, {headers:{Accept:'image/png'}});
+    if (resp.ok) {
+      const blob = await resp.blob();
+      const imgUrl = URL.createObjectURL(blob);
+      prev.innerHTML = `<img src="${imgUrl}" alt="Preview etiqueta">`;
+    } else {
+      prev.innerHTML = `<div class="zpl-preview-placeholder">Error ${resp.status}<br>Revisa el ZPL</div>`;
+    }
+  } catch(e) {
+    prev.innerHTML = '<div class="zpl-preview-placeholder">Sin conexión para preview</div>';
+  }
+}
+
+async function guardarPlantilla() {
+  const clave = document.getElementById('zpl-nombre').value.trim();
+  const zpl   = document.getElementById('zpl-editor').value.trim();
+  if (!clave) { alert('Pon un nombre a la plantilla'); return; }
+  if (!zpl)   { alert('El ZPL está vacío'); return; }
+
+  // Auto-convert ZPL to HTML
+  let htmlTemplate = '';
+  let wMm = 100, hMm = 100, hasBarcode = false;
+  try {
+    const parsed = zplToHtml(zpl);
+    htmlTemplate = parsed.html;
+    wMm = parsed.wMm;
+    hMm = parsed.hMm;
+    hasBarcode = parsed.hasBarcode;
+  } catch(e) {
+    console.warn('ZPL parse error:', e);
+  }
+
+  const template = { clave, zpl, html: htmlTemplate, wMm, hMm, hasBarcode };
+
+  // Update or insert
+  const idxByTab  = DB.zplTemplates.findIndex(t => t.clave === zplTabActual);
+  const idxByName = DB.zplTemplates.findIndex(t => t.clave === clave);
+  if (idxByTab >= 0) DB.zplTemplates[idxByTab] = template;
+  else if (idxByName >= 0) DB.zplTemplates[idxByName] = template;
+  else DB.zplTemplates.push(template);
+  zplTabActual = clave;
+  saveLocal();
+
+  // Sync to Sheets
+  if (navigator.onLine) {
+    try {
+      await sheetsPost({ action:'guardarZPL', clave, zpl });
+      setSyncStatus('ok', `Plantilla "${clave}" guardada`);
+    } catch(e) {
+      setSyncStatus('pending', 'Pendiente de sync');
+    }
+  }
+
+  // Refresh tabs without losing editor content
+  const tabs = document.getElementById('zpl-tabs');
+  tabs.innerHTML = DB.zplTemplates.map(t =>
+    `<button class="zpl-tab ${t.clave===zplTabActual?'active':''}" onclick="selectZplTab('${t.clave}')">${t.clave}</button>`
+  ).join('');
+  document.getElementById('zpl-empty').style.display = 'none';
+  document.getElementById('zpl-layout').style.display = 'grid';
+
+  alert(`✅ Plantilla "${clave}" guardada correctamente.`);
+}
+
+function eliminarPlantilla() {
+  if (!zplTabActual || !confirm(`¿Eliminar plantilla "${zplTabActual}"?`)) return;
+  DB.zplTemplates = DB.zplTemplates.filter(t => t.clave!==zplTabActual);
+  zplTabActual = DB.zplTemplates[0]?.clave || null;
+  saveLocal();
+  renderEtiquetas();
+}
+
+// ════════════════════════════════════════════════════════
+//  CLIENTES
+// ════════════════════════════════════════════════════════
+function renderClientesList() {
+  document.getElementById('clientes-list').innerHTML = DB.clientes.map(cl => `
+    <div class="card" style="margin-bottom:10px">
+      <div class="flex-between">
+        <div>
+          <div style="font-size:16px;font-weight:600;margin-bottom:5px">${cl.nombre}</div>
+          <div style="font-size:12px;color:var(--text2);line-height:1.8">
+            ${cl.idioma==='es'?'🇪🇸':'🇬🇧'} · Cad: ${cl.diasCad}d · ${cl.cajasPallet} caj/pallet · Cal.mín: ${cl.calMin} kg · ${cl.temp}ºC<br>
+            Producido para: <span class="mono">${cl.producido}</span><br>
+            Plantilla: <span class="mono">${cl.plantilla||'—'}</span>
+          </div>
+        </div>
+        <button class="btn btn-secondary btn-sm" onclick="openClienteModal('${cl.id}')">Editar</button>
+      </div>
+    </div>`).join('');
+  renderCalibresList();
+}
+
+function renderCalibresList() {
+  const list = document.getElementById('calibres-list');
+  if (!list) return;
+  list.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 90px 90px auto;gap:8px;align-items:center;margin-bottom:6px;padding:0 4px">
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Etiqueta</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Desde (kg)</span>
+      <span style="font-size:10px;color:var(--text3);text-transform:uppercase;letter-spacing:.05em">Hasta (kg)</span>
+      <span></span>
+    </div>
+    ${DB.calibres.map((c, i) => `
+    <div style="display:grid;grid-template-columns:1fr 90px 90px auto;gap:8px;align-items:center;margin-bottom:6px">
+      <input type="text" value="${c.label}"
+        style="font-size:13px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;font-family:var(--mono)"
+        oninput="DB.calibres[${i}].label=this.value;saveLocal()">
+      <input type="number" step="0.1" value="${c.min}"
+        style="font-size:13px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;font-family:var(--mono);text-align:center"
+        oninput="DB.calibres[${i}].min=parseFloat(this.value);saveLocal()">
+      <input type="number" step="0.1" value="${c.max==='99'||c.max===99?'':c.max}"
+        placeholder="+∞"
+        style="font-size:13px;padding:5px 8px;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);outline:none;font-family:var(--mono);text-align:center"
+        oninput="DB.calibres[${i}].max=this.value?parseFloat(this.value):99;saveLocal()">
+      <button class="btn btn-danger btn-xs" onclick="deleteCalibre(${i})">✕</button>
+    </div>`).join('')}
+  `;
+}
+
+function addCalibre() {
+  DB.calibres.push({id:'c'+Date.now(), label:'Nuevo rango', min:0, max:99});
+  saveLocal();
+  renderCalibresList();
+}
+
+function deleteCalibre(i) {
+  if (DB.calibres.length <= 1) { alert('Debe haber al menos un rango'); return; }
+  if (!confirm(`¿Eliminar el rango "${DB.calibres[i].label}"?`)) return;
+  DB.calibres.splice(i, 1);
+  saveLocal();
+  renderCalibresList();
+}
+
+function openClienteModal(id) {
+  editingClienteId = id;
+  const cl = id ? DB.clientes.find(c=>c.id===id) : null;
+  document.getElementById('modal-cliente-title').textContent = cl ? `Editar: ${cl.nombre}` : 'Nuevo cliente';
+  document.getElementById('cl-nombre').value   = cl?.nombre    || '';
+  document.getElementById('cl-idioma').value   = cl?.idioma    || 'es';
+  document.getElementById('cl-producido').value= cl?.producido || '';
+  document.getElementById('cl-temp').value     = cl?.temp      || '-3/+2';
+  document.getElementById('cl-dias').value     = cl?.diasCad   || 14;
+  document.getElementById('cl-cajas').value    = cl?.cajasPallet|| 24;
+  document.getElementById('cl-pallets').value  = cl?.palletsMax || 33;
+  document.getElementById('cl-calmin').value   = cl?.calMin    || 2;
+  document.getElementById('cl-delete-btn').style.display = id ? 'inline-flex' : 'none';
+  // Populate plantilla select
+  const plSel = document.getElementById('cl-plantilla');
+  plSel.innerHTML = '<option value="">— Sin plantilla —</option>' +
+    DB.zplTemplates.map(t => `<option value="${t.clave}" ${t.clave===(cl?.plantilla||'')?'selected':''}>${t.clave}</option>`).join('');
+  document.getElementById('modal-cliente').classList.add('open');
+}
+
+async function saveCliente() {
+  const nombre = document.getElementById('cl-nombre').value.trim();
+  if (!nombre) { alert('El nombre es obligatorio'); return; }
+  const cl = {
+    id:          editingClienteId || ('c'+Date.now()),
+    nombre,
+    idioma:      document.getElementById('cl-idioma').value,
+    producido:   document.getElementById('cl-producido').value.trim(),
+    temp:        document.getElementById('cl-temp').value,
+    diasCad:     parseInt(document.getElementById('cl-dias').value)||14,
+    cajasPallet: parseInt(document.getElementById('cl-cajas').value)||24,
+    palletsMax:  parseInt(document.getElementById('cl-pallets').value)||33,
+    calMin:      parseFloat(document.getElementById('cl-calmin').value)||2,
+    plantilla:   document.getElementById('cl-plantilla').value || '',
+  };
+  if (editingClienteId) {
+    const idx = DB.clientes.findIndex(c=>c.id===editingClienteId);
+    if (idx>=0) DB.clientes[idx]=cl;
+  } else {
+    DB.clientes.push(cl);
+  }
+  saveLocal();
+  if (navigator.onLine) {
+    try { await sheetsPost({action:'guardarClientes', clientes:DB.clientes}); setSyncStatus('ok','Guardado'); }
+    catch(e) { setSyncStatus('pending','Pendiente de sync'); }
+  }
+  closeModal('modal-cliente');
+  renderClientesList();
+}
+
+function deleteCliente() {
+  if (!editingClienteId) return;
+  const cl = DB.clientes.find(c=>c.id===editingClienteId);
+  if (!confirm(`¿Eliminar cliente "${cl?.nombre}"?`)) return;
+  DB.clientes = DB.clientes.filter(c=>c.id!==editingClienteId);
+  saveLocal();
+  closeModal('modal-cliente');
+  renderClientesList();
+}
+
+// ════════════════════════════════════════════════════════
+//  UTILS
+// ════════════════════════════════════════════════════════
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+function isValid(v) { const n=parseFloat(v); return !isNaN(n)&&n>=0.1&&n<=99.9; }
+function calcTotal(pesos) { return pesos.reduce((s,v)=>s+(parseFloat(v)||0),0); }
+function getCalibreMin(id) { return getCalibreRangos().find(r=>r.id===id)?.min||0; }
+function getCalibreLabel(id) { return getCalibreRangos().find(r=>r.id===id)?.label||id; }
+function pesoEnRango(m, id) { const r=getCalibreRangos().find(x=>x.id===id); return r?m>=r.min&&m<r.max:true; }
+function normalizeDate(val) {
+  if (!val || val === '' || val === 'undefined' || val === 'null') return '';
+  // Already ISO format YYYY-MM-DD
+  if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return String(val);
+  // Try parsing as date
+  try {
+    const d = new Date(val);
+    if (!isNaN(d.getTime())) {
+      return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    }
+  } catch(e) {}
+  return '';
+}
+
+function isoToday() { const d=new Date(); return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`; }
+function fmtDate(d) { if(!d) return '—'; return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}/${d.getFullYear()}`; }
+function fmtDateISO(iso) { if(!iso) return '—'; const [y,m,d]=iso.split('-'); return `${d}/${m}/${y}`; }
+
+// ════════════════════════════════════════════════════════
+//  INIT
+// ════════════════════════════════════════════════════════
+document.addEventListener('DOMContentLoaded', async () => {
+  // Close modals on overlay click
+  document.querySelectorAll('.modal-overlay').forEach(m => {
+    m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
+  });
+  renderHome();
+  await cargarDesdeSheetsInicial();
+  renderHome();
+});
+</script>
+</body>
+</html>

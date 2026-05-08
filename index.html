@@ -698,7 +698,7 @@ textarea.code-area:focus{border-color:var(--accent)}
 // ════════════════════════════════════════════════════════
 //  CONFIG
 // ════════════════════════════════════════════════════════
-const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbwZt0k9m5fZxhG_9RiYwT3nB29bzgCnw5enYLiiop6MNPBOVjP4lPFBZj9l_XXfLY65/exec';
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbz2xaTjYZkIBKV6ee30CpmEzR3WVu1Oh4l4IJgRY2h6Si_HgBeHXb4Nsev30yCynvl7/exec';
 
 const CALIBRE_RANGOS_DEFAULT = [
   {id:'c1-15',  label:'1 - 1,5 Kg',  min:1,   max:1.5},
@@ -746,8 +746,6 @@ async function sheetsPost(data) {
   const resp = await fetch(SHEETS_URL, {
     method: 'POST',
     body: JSON.stringify(data),
-    redirect: 'follow',
-    headers: { 'Content-Type': 'text/plain' },
   });
   return resp.json();
 }

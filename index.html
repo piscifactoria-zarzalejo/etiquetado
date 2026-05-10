@@ -237,13 +237,39 @@ textarea.code-area:focus{border-color:var(--accent)}
   <div class="flex-between mb-16">
     <div>
       <div class="section-title">Cargas</div>
-      <div class="section-sub">Selecciona una carga existente o crea una nueva</div>
+      <div class="section-sub">Gestiona los camiones activos y el histórico</div>
     </div>
     <button class="btn btn-primary" onclick="openNuevaCarga()">+ Nueva carga</button>
   </div>
-  <div class="carga-grid" id="carga-grid"></div>
-  <div id="carga-empty" class="hidden" style="text-align:center;padding:40px;color:var(--text3)">
-    No hay cargas registradas. Crea la primera con el botón de arriba.
+
+  <div style="margin-bottom:24px">
+    <div style="font-size:11px;font-weight:600;color:var(--warning);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px">
+      <span style="width:8px;height:8px;border-radius:50%;background:var(--warning);display:inline-block"></span>
+      En curso
+    </div>
+    <div class="carga-grid" id="carga-grid-encurso"></div>
+    <div id="carga-empty-encurso" class="hidden" style="padding:20px;color:var(--text3);font-size:13px;background:var(--bg2);border:1px dashed var(--border);border-radius:var(--r2);text-align:center">
+      No hay cargas en curso. Crea una nueva con el boton de arriba.
+    </div>
+  </div>
+
+  <div>
+    <div style="font-size:11px;font-weight:600;color:var(--accent);letter-spacing:.08em;text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleCompletadas()">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="width:8px;height:8px;border-radius:50%;background:var(--accent);display:inline-block"></span>
+        Completadas
+        <span id="completadas-count" style="font-size:10px;color:var(--text3);font-weight:400"></span>
+      </div>
+      <span id="completadas-arrow" style="color:var(--text3)">&#9654;</span>
+    </div>
+    <div id="completadas-section" style="display:none">
+      <div style="margin-bottom:10px">
+        <input type="text" id="completadas-search" placeholder="Buscar por nombre, cliente o lote..."
+          oninput="renderCompletadas()"
+          style="width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:13px;padding:8px 12px;outline:none">
+      </div>
+      <div id="completadas-list"></div>
+    </div>
   </div>
 </div>
 </div>
@@ -781,6 +807,13 @@ async function syncToSheets() {
 
 async function syncPallets() {
   saveLocal();
+  // Update carga updatedAt
+  if (cargaActual) {
+    cargaActual.updatedAt = new Date().toISOString();
+    const idx = DB.cargas.findIndex(c => c.id === cargaActual.id);
+    if (idx >= 0) DB.cargas[idx] = cargaActual;
+    localStorage.setItem('cargas', JSON.stringify(DB.cargas));
+  }
   if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — guardado local'); return; }
   try {
     setSyncStatus('pending','Guardando...');
@@ -805,30 +838,74 @@ function saveLocal() {
 async function cargarDesdeSheetsInicial() {
   if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — usando datos locales'); return; }
   try {
-    setSyncStatus('pending','Cargando desde Sheets...');
-    // Cargar clientes — deduplicar por ID
+    setSyncStatus('pending','Sincronizando...');
+
+    // ── Clientes: Sheets gana (datos de configuración) ──
     const rCl = await sheetsPost({ action:'cargarClientes' });
     if (rCl.clientes && rCl.clientes.length > 0) {
       const seen = new Set();
-      DB.clientes = rCl.clientes.filter(c => {
-        if (seen.has(c.id)) return false;
-        seen.add(c.id); return true;
-      });
+      DB.clientes = rCl.clientes.filter(c => { if(seen.has(c.id)) return false; seen.add(c.id); return true; });
       localStorage.setItem('clientes', JSON.stringify(DB.clientes));
-      // Fix duplicates in Sheets too
-      await sheetsPost({ action:'guardarClientes', clientes: DB.clientes });
     }
-    // Cargar índice cargas — deduplicar por ID
+
+    // ── Cargas: merge por ID, local gana si updatedAt más reciente ──
     const rCg = await sheetsPost({ action:'listarCargas' });
     if (rCg.cargas) {
-      const seen2 = new Set();
-      DB.cargas = rCg.cargas.filter(c => {
-        if (seen2.has(c.id)) return false;
-        seen2.add(c.id); return true;
-      });
+      const sheetsMap = {};
+      rCg.cargas.forEach(c => sheetsMap[c.id] = c);
+      const localMap = {};
+      DB.cargas.forEach(c => localMap[c.id] = c);
+
+      // Merge: para cada ID, usar el más reciente
+      const allIds = new Set([...Object.keys(sheetsMap), ...Object.keys(localMap)]);
+      const merged = [];
+      const toUpload = [];
+
+      for (const id of allIds) {
+        const local = localMap[id];
+        const remote = sheetsMap[id];
+        if (!remote) {
+          // Solo en local — subir a Sheets
+          merged.push(local);
+          toUpload.push(local);
+        } else if (!local) {
+          // Solo en Sheets — bajar
+          merged.push(remote);
+        } else {
+          // En ambos — gana el más reciente por updatedAt
+          const localTime = new Date(local.updatedAt || local.creadaEn || 0).getTime();
+          const remoteTime = new Date(remote.updatedAt || remote.creadaEn || 0).getTime();
+          if (localTime >= remoteTime) {
+            merged.push(local);
+            if (localTime > remoteTime) toUpload.push(local);
+          } else {
+            merged.push(remote);
+          }
+        }
+      }
+
+      DB.cargas = merged;
       localStorage.setItem('cargas', JSON.stringify(DB.cargas));
+
+      // Subir cargas locales más recientes
+      for (const c of toUpload) {
+        try { await sheetsPost({ action:'guardarCabeceraCarga', carga: c }); } catch(e) {}
+      }
+
+      // Para cada carga local, sincronizar pallets si tiene datos locales más recientes
+      for (const c of DB.cargas) {
+        const localPallets = localStorage.getItem('pallets_' + c.id);
+        if (localPallets) {
+          const lp = JSON.parse(localPallets);
+          if (lp.length > 0) {
+            // Subir pallets locales — son la fuente de verdad
+            try { await sheetsPost({ action:'guardarPalletsCarga', cargaId: c.id, pallets: lp }); } catch(e) {}
+          }
+        }
+      }
     }
-    // Cargar plantillas ZPL
+
+    // ── ZPL Templates ──
     const rZpl = await sheetsPost({ action:'listarZPL' });
     if (rZpl.templates && rZpl.templates.length > 0) {
       const loaded = [];
@@ -843,6 +920,7 @@ async function cargarDesdeSheetsInicial() {
         localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
       }
     }
+
     setSyncStatus('ok','Sincronizado');
     renderHome();
   } catch(e) {
@@ -872,33 +950,73 @@ function goView(v) {
 // ════════════════════════════════════════════════════════
 //  HOME — CARGAS
 // ════════════════════════════════════════════════════════
-function renderHome() {
-  const grid = document.getElementById('carga-grid');
-  const empty = document.getElementById('carga-empty');
-  if (!DB.cargas.length) {
-    grid.innerHTML = '';
-    empty.classList.remove('hidden');
+function toggleCompletadas() {
+  const sec = document.getElementById('completadas-section');
+  const arrow = document.getElementById('completadas-arrow');
+  const open = sec.style.display === 'none';
+  sec.style.display = open ? 'block' : 'none';
+  arrow.innerHTML = open ? '&#9660;' : '&#9654;';
+  if (open) renderCompletadas();
+}
+
+function renderCompletadas() {
+  const q = (document.getElementById('completadas-search')?.value || '').toLowerCase();
+  const completadas = DB.cargas
+    .filter(c => c.estado === 'completada')
+    .filter(c => !q || c.nombre?.toLowerCase().includes(q) || c.clienteNombre?.toLowerCase().includes(q) || c.lote?.toLowerCase().includes(q))
+    .sort((a,b) => (b.fechaCarga||'').localeCompare(a.fechaCarga||''));
+
+  const list = document.getElementById('completadas-list');
+  if (!completadas.length) {
+    list.innerHTML = '<div style="padding:16px;color:var(--text3);font-size:13px;text-align:center">No hay cargas completadas' + (q?' que coincidan con la búsqueda':'') + '</div>';
     return;
   }
-  empty.classList.add('hidden');
-  // Sort: en_curso primero, luego por fecha desc
-  const sorted = [...DB.cargas].sort((a,b) => {
-    if (a.estado !== b.estado) return a.estado === 'en_curso' ? -1 : 1;
-    return b.fechaCarga.localeCompare(a.fechaCarga);
-  });
-  grid.innerHTML = sorted.map(c => {
+  list.innerHTML = completadas.map(c => {
     const cl = DB.clientes.find(x => x.id === c.clienteId);
-    return `<div class="carga-card estado-${c.estado}" onclick="abrirCarga('${c.id}')">
-      <div class="cc-estado">${c.estado === 'en_curso' ? 'En curso' : 'Completada'}</div>
-      <div class="cc-nombre">${c.nombre}</div>
-      <div class="cc-cliente">${cl ? cl.nombre : c.clienteId}</div>
-      <div class="cc-meta">
-        📅 Carga: ${fmtDateISO(c.fechaCarga)}<br>
-        📦 Lote: ${c.lote || '—'}<br>
-        ⏱ Cad: ${c.diasCad} días
+    return `<div style="background:var(--bg2);border:1px solid var(--border);border-radius:var(--r2);padding:12px 16px;margin-bottom:8px;display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="abrirCarga('${c.id}')">
+      <div>
+        <div style="font-size:14px;font-weight:600;margin-bottom:3px">${c.nombre}</div>
+        <div style="font-size:12px;color:var(--text2)">${cl?cl.nombre:c.clienteId} · ${c.lote||'—'} · ${fmtDateISO(c.fechaCarga)}</div>
       </div>
+      <div style="font-size:11px;color:var(--accent);font-weight:600">✓ Completada</div>
     </div>`;
   }).join('');
+}
+
+function renderHome() {
+  const encurso = DB.cargas.filter(c => c.estado !== 'completada').sort((a,b) => (b.fechaCarga||'').localeCompare(a.fechaCarga||''));
+  const completadas = DB.cargas.filter(c => c.estado === 'completada');
+
+  // En curso
+  const grid = document.getElementById('carga-grid-encurso');
+  const empty = document.getElementById('carga-empty-encurso');
+  if (!encurso.length) {
+    grid.innerHTML = '';
+    empty.classList.remove('hidden');
+  } else {
+    empty.classList.add('hidden');
+    grid.innerHTML = encurso.map(c => {
+      const cl = DB.clientes.find(x => x.id === c.clienteId);
+      return `<div class="carga-card estado-en_curso" onclick="abrirCarga('${c.id}')">
+        <div class="cc-estado">En curso</div>
+        <div class="cc-nombre">${c.nombre}</div>
+        <div class="cc-cliente">${cl?cl.nombre:c.clienteId}</div>
+        <div class="cc-meta">
+          📅 ${fmtDateISO(c.fechaCarga)}<br>
+          📦 ${c.lote||'—'}<br>
+          ⏱ ${c.diasCad} días cad.
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // Completadas counter
+  const cnt = document.getElementById('completadas-count');
+  if (cnt) cnt.textContent = completadas.length ? `(${completadas.length})` : '';
+
+  // Re-render completadas if section is open
+  const sec = document.getElementById('completadas-section');
+  if (sec && sec.style.display !== 'none') renderCompletadas();
 }
 
 async function abrirCarga(id) {
@@ -1099,6 +1217,7 @@ async function guardarCarga() {
     piscinaRangos: cargaActual?.piscinaRangos || [],
     estado:        editingCargaId ? (cargaActual?.estado || 'en_curso') : 'en_curso',
     creadaEn:      editingCargaId ? (cargaActual?.creadaEn || new Date().toISOString()) : new Date().toISOString(),
+    updatedAt:     new Date().toISOString(),
   };
   if (editingCargaId) {
     const idx = DB.cargas.findIndex(c => c.id === editingCargaId);

@@ -2127,11 +2127,14 @@ function genBarcode(code) {
   for(let i=0;i<6;i++) bars.push(R[d[i+7]]);
   bars.push([1,0,1]);
   const flat=bars.flat(); const bw=100/flat.length;
-  let svg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:100%;">`;
+  // Bars SVG — stretched to 80% of container width, centered
+  let barsSvg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="position:absolute;left:10%;top:0;width:80%;height:85%;">`;
   let x=0;
-  for(const bit of flat){if(bit)svg+=`<rect x="${x.toFixed(2)}" y="0" width="${bw.toFixed(2)}" height="82" fill="black"/>`;x+=bw;}
-  svg+=`<text x="50" y="95" text-anchor="middle" font-family="Arial" font-size="7" fill="black">${code.split('').join(' ')}</text></svg>`;
-  return svg;
+  for(const bit of flat){if(bit)barsSvg+=`<rect x="${x.toFixed(2)}" y="0" width="${bw.toFixed(2)}" height="100" fill="black"/>`;x+=bw;}
+  barsSvg+=`</svg>`;
+  // Text — not stretched, centered below bars, letter-spacing to match bar width
+  const textDiv=`<div style="position:absolute;bottom:0;left:0;right:0;text-align:center;font-family:Arial;font-size:2.5mm;color:#000;letter-spacing:2mm">${code}</div>`;
+  return barsSvg + textDiv;
 }
 
 // ── Label preview — central panel ────────────────────────

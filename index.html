@@ -884,7 +884,10 @@ async function cargarDesdeSheetsInicial() {
         }
       }
 
-      DB.cargas = merged;
+      DB.cargas = merged.map(c => ({
+        ...c,
+        fechaCarga: normalizeDate(c.fechaCarga),
+      }));
       localStorage.setItem('cargas', JSON.stringify(DB.cargas));
 
       // Subir cargas locales más recientes
@@ -1034,15 +1037,23 @@ async function abrirCarga(id) {
     try {
       const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
       if (r.pallets && r.pallets.length > 0) {
-        // Reconstruct pallets with proper IDs for DOM
         pallets = r.pallets.map(p => ({
           ...p,
           id: 'p' + p.palletNum + '_' + id,
           pesos: p.pesos || new Array(p.cajas).fill(''),
-          // Normalise fechaCaptura — Sheets may return a Date string in various formats
           fechaCaptura: normalizeDate(p.fechaCaptura),
         }));
         saveLocal();
+      }
+    } catch(e) {}
+    // Cargar balance de Sheets si no hay local
+    try {
+      const localBalance = localStorage.getItem('balance_' + id);
+      if (!localBalance || localBalance === '{}') {
+        const rb = await sheetsPost({ action:'cargarBalance', cargaId: id });
+        if (rb.balance) {
+          localStorage.setItem('balance_' + id, JSON.stringify(rb.balance));
+        }
       }
     } catch(e) {}
   }
@@ -2217,7 +2228,7 @@ let plIdioma = null; // null = use client idioma, 'es' or 'en' = override
 function getBalanceData() {
   return JSON.parse(localStorage.getItem('balance_' + (cargaActual?.id||'')) || '{}');
 }
-function saveBalance() {
+async function saveBalance() {
   if (!cargaActual) return;
   const data = getBalanceData();
   data.fueraPeso  = parseInt(document.getElementById('bal-fuera-peso')?.value) || 0;
@@ -2233,6 +2244,9 @@ function saveBalance() {
     };
   }
   localStorage.setItem('balance_' + cargaActual.id, JSON.stringify(data));
+  if (navigator.onLine) {
+    try { await sheetsPost({ action:'guardarBalance', cargaId: cargaActual.id, balance: data }); } catch(e) {}
+  }
 }
 function getPiscinasAgrupadas() {
   const map = {};
@@ -2547,7 +2561,6 @@ function renderPackingList() {
       <div class="epill"><span class="elbl">${es?'Cliente':'Customer'}</span><span class="eval">${cl?cl.nombre:'—'}</span></div>
       <div class="epill"><span class="elbl">Lote / Lot</span><span class="eval">${cargaActual.lote||'—'}</span></div>
       <div class="epill"><span class="elbl">${es?'Caducidad':'Best before'}</span><span class="eval">${cargaActual.diasCad} ${es?'días':'days'}</span></div>
-      <div class="epill"><span class="elbl">GGN</span><span class="eval">${cargaActual.ggn||'—'}</span></div>
     </div>
     ${tramos.length ? `<div style="font-size:11px;color:var(--text2);margin-top:4px"><span style="color:var(--text3);text-transform:uppercase;font-size:10px;letter-spacing:.04em">${es?'Tramos':'Batches'}: </span>${tramosText}</div>` : ''}`;
 
@@ -2863,11 +2876,12 @@ function getCalibreLabel(id) { return getCalibreRangos().find(r=>r.id===id)?.lab
 function pesoEnRango(m, id) { const r=getCalibreRangos().find(x=>x.id===id); return r?m>=r.min&&m<r.max:true; }
 function normalizeDate(val) {
   if (!val || val === '' || val === 'undefined' || val === 'null') return '';
+  const s = String(val).trim();
   // Already ISO format YYYY-MM-DD
-  if (/^\d{4}-\d{2}-\d{2}$/.test(String(val))) return String(val);
-  // Try parsing as date
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Try parsing as date (handles Google Sheets format and others)
   try {
-    const d = new Date(val);
+    const d = new Date(s);
     if (!isNaN(d.getTime())) {
       return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     }

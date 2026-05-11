@@ -2102,7 +2102,7 @@ function applyLabelVars(htmlTemplate, vars) {
     .replace(/\{TEMP\}/g,   vars.temp    || '-3/+2ºC')
     .replace(/data-barcode="true"><\/div>/g,
       vars.barcode
-        ? `data-barcode="true" style="overflow:visible;">${genBarcode(vars.barcode)}</div>`
+        ? `data-barcode="true" style="position:relative;">${genBarcode(vars.barcode)}</div>`
         : 'data-barcode="true"></div>');
 }
 
@@ -2127,7 +2127,7 @@ function genBarcode(code) {
   for(let i=0;i<6;i++) bars.push(R[d[i+7]]);
   bars.push([1,0,1]);
   const flat=bars.flat(); const bw=100/flat.length;
-  let svg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block;">`;
+  let svg=`<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="position:absolute;left:0;top:0;width:100%;height:100%;">`;
   let x=0;
   for(const bit of flat){if(bit)svg+=`<rect x="${x.toFixed(2)}" y="0" width="${bw.toFixed(2)}" height="82" fill="black"/>`;x+=bw;}
   svg+=`<text x="50" y="95" text-anchor="middle" font-family="Arial" font-size="7" fill="black">${code.split('').join(' ')}</text></svg>`;

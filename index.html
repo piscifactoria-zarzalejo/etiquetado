@@ -421,7 +421,7 @@ textarea.code-area:focus{border-color:var(--accent)}
         <input type="number" id="bal-fuera-peso" min="0" value="0"
           style="width:80px;font-family:var(--mono);font-size:22px;font-weight:600;color:var(--accent);background:transparent;border:none;outline:none;text-align:center"
           oninput="saveBalance()">
-        <div class="stat-lbl">Uds. fuera de peso (congeladas)</div>
+        <div class="stat-lbl">Uds. fuera de peso</div>
       </div>
       <div style="background:var(--bg);border:1px solid var(--border2);border-radius:var(--r);padding:14px;text-align:center">
         <input type="number" id="bal-desechadas" min="0" value="0"
@@ -2395,7 +2395,7 @@ function printBalance() {
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;border-bottom:2px solid #000;padding-bottom:10px">
       <div>
         <div style="font-size:18px;font-weight:700">Balance de Masas</div>
-        <div style="font-size:11px;color:#555">${cargaActual?.nombre||''} — ${new Date().toLocaleDateString()}</div>
+        <div style="font-size:11px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')}</div>
       </div>
       <div style="font-size:10px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
     </div>
@@ -2407,7 +2407,7 @@ function printBalance() {
       <table style="width:50%;border-collapse:collapse;font-size:11px">
         <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Kg totales eviscerados</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace;font-weight:700">${totalKg.toFixed(1)}</td></tr>
         <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Unidades totales evisceradas</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace;font-weight:700">${totalUds||'—'}</td></tr>
-        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Uds. fuera de peso (congeladas)</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace">${data.fueraPeso||0}</td></tr>
+        <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Uds. fuera de peso</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace">${data.fueraPeso||0}</td></tr>
         <tr><td style="border:1px solid #ccc;padding:5px 8px;font-weight:600">Uds. desechadas</td><td style="border:1px solid #ccc;padding:5px 8px;font-family:monospace">${data.desechadas||0}</td></tr>
       </table>
     </div>`;
@@ -2479,7 +2479,7 @@ function printPackingList() {
       <div><div style="font-size:10px;font-weight:700;color:#000;text-transform:uppercase;letter-spacing:.04em">${es?'Caducidad':'Best before'}</div><div style="font-size:12px;font-weight:400">${cargaActual?.diasCad||'—'} ${es?'días':'days'}</div></div>
     </div>
     ${table}
-    <div style="margin-top:10px;font-size:9px;color:#999">${es?'Generado el':'Generated on'} ${new Date().toLocaleDateString()}</div>`;
+    <div style="margin-top:10px;font-size:9px;color:#999">${es?'Cargado el':'Shipment date:'} ${fmtDateISO(cargaActual?.fechaCarga||'')}</div>`;
 
   const style = document.createElement('style');
   style.textContent = `

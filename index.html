@@ -343,7 +343,7 @@ textarea.code-area:focus{border-color:var(--accent)}
         <span>Preview etiqueta</span>
         <span style="font-size:9px" id="preview-caja-label">caja 01 · pallet 01</span>
       </div>
-      <div id="envio-label-preview" style="background:#f5f5f5;border-radius:4px;min-height:180px;display:flex;align-items:center;justify-content:center;overflow:hidden">
+      <div id="envio-label-preview" style="background:#f5f5f5;border-radius:4px;height:200px;display:flex;align-items:flex-start;justify-content:center;overflow:hidden;padding:4px">
         <span style="color:#999;font-size:11px;text-align:center;padding:8px">Añade un pallet<br>para ver la preview</span>
       </div>
     </div>
@@ -2235,20 +2235,21 @@ async function renderCentralPreview() {
       'data-barcode="true" style="background:repeating-linear-gradient(90deg,#333 0,#333 1.5px,white 1.5px,white 3px);"></div>');
 
   // Wrap with preview CSS
-  const wrapped = `<style>
-    .lbl-prev{position:relative;width:100mm;height:100mm;background:white;font-family:Arial,sans-serif;overflow:hidden}
-    .lbl-prev *{position:absolute;color:#000;line-height:1;white-space:nowrap}
-    .lbl-prev .box{border:0.4mm solid #000;background:transparent}
-    .lbl-prev .ellipse{border:0.4mm solid #000;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2.1mm;line-height:1.3;white-space:normal;position:absolute}
-  </style>
-  <div style="transform:scale(0.5);transform-origin:top left;width:100mm;height:100mm">
-    ${html.replace(/class="label"/g,'class="lbl-prev"')}
-  </div>`;
-
-  el.style.height = '110px';
   el.style.overflow = 'hidden';
   el.style.background = '#f5f5f5';
-  el.innerHTML = wrapped;
+  el.style.display = 'flex';
+  el.style.alignItems = 'flex-start';
+  el.style.justifyContent = 'center';
+  el.style.padding = '4px';
+  el.innerHTML = `<div style="transform:scale(0.45);transform-origin:top center;flex-shrink:0;font-family:Arial,sans-serif">
+    <style>
+      .lbl-prev{position:relative;width:100mm;height:100mm;background:white;overflow:hidden;border:0.3mm solid #ccc}
+      .lbl-prev *{position:absolute;color:#000;line-height:1;white-space:nowrap}
+      .lbl-prev .box{border:0.4mm solid #000;background:transparent}
+      .lbl-prev .ellipse{border:0.4mm solid #000;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2.1mm;line-height:1.3;white-space:normal;position:absolute}
+    </style>
+    ${html.replace(/class="label"/g,'class="lbl-prev"')}
+  </div>`;
 }
 
 // Keep old function as alias

@@ -434,13 +434,13 @@ textarea.code-area:focus{border-color:var(--accent)}
 </div>
 </div>
 
-<!-- ══ VIEW: ETIQUETAS / ZPL ══ -->
+<!-- ══ VIEW: ETIQUETAS ══ -->
 <div id="view-etiquetas" class="view">
 <div class="container-wide">
   <div class="flex-between mb-16">
     <div>
       <div class="section-title">Plantillas de etiqueta</div>
-      <div class="section-sub">Gestiona el ZPL de cada plantilla. La preview se genera vía Labelary.</div>
+      <div class="section-sub">Edita el HTML de cada plantilla y previsualiza en tiempo real.</div>
     </div>
     <button class="btn btn-primary btn-sm" onclick="nuevaPlantilla()">+ Nueva plantilla</button>
   </div>
@@ -450,57 +450,63 @@ textarea.code-area:focus{border-color:var(--accent)}
       <div class="card" style="margin-bottom:10px">
         <div class="card-title">Nombre plantilla</div>
         <div class="flex gap-8">
-          <input type="text" id="zpl-nombre" placeholder="ej. MOWI_EN, Genérica_ES..."
+          <input type="text" id="zpl-nombre" placeholder="ej. GENERICA INGLES"
             style="flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);color:var(--text);font-size:14px;padding:8px 10px;outline:none">
           <button class="btn btn-secondary btn-sm" onclick="eliminarPlantilla()">Eliminar</button>
           <button class="btn btn-primary btn-sm" onclick="guardarPlantilla()">Guardar</button>
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Código ZPL
+        <div class="card-title">HTML de la etiqueta
           <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
-            Variables: {PALLET} {CAJA} {CALIBRE} {PESO} {LOTE} {CAPTURA} {CADUCIDAD} {CLIENTE} {GGN} {BARCODE}
+            Variables: {PALLET} {CAJA} {CALIBRE} {PESO} {LOTE} {CAPTURA} {CADUCIDAD} {CLIENTE} {TEMP} {BARCODE}
           </span>
         </div>
         <textarea class="code-area" id="zpl-editor" rows="22"
-          placeholder="Pega aquí el ZPL. Usa {PALLET}, {CAJA}, {PESO}... para los campos variables."
+          placeholder="Pega aquí el HTML del div.label. Usa {PALLET}, {CAJA}, {PESO}... para los campos variables."
           oninput="schedulePreview()"></textarea>
         <div class="flex gap-8 mt-12">
-          <button class="btn btn-secondary btn-sm" onclick="previewZPL()">👁 Actualizar preview</button>
-          <button class="btn btn-secondary btn-sm" onclick="regenerarHTML()">⚙ Regenerar HTML</button>
-          <span style="font-size:11px;color:var(--text3);margin-left:4px">La preview usa datos de ejemplo</span>
+          <span style="font-size:11px;color:var(--text3)">La preview usa datos de ejemplo</span>
         </div>
       </div>
     </div>
     <div>
       <div class="card">
-        <div class="card-title">Preview (Labelary)</div>
-        <div class="zpl-preview" id="zpl-preview">
-          <div class="zpl-preview-placeholder">Escribe ZPL y pulsa<br>"Actualizar preview"</div>
+        <div class="card-title">Preview</div>
+        <div style="background:#e8e8e8;border-radius:var(--r2);padding:16px;display:flex;align-items:center;justify-content:center;min-height:320px">
+          <div style="transform:scale(2.8);transform-origin:center center;margin:80px auto">
+            <style>
+              .lbl-prev{position:relative;width:100mm;height:100mm;background:white;font-family:Arial,sans-serif;overflow:hidden}
+              .lbl-prev *{position:absolute;color:#000;line-height:1;white-space:nowrap}
+              .lbl-prev .box{border:0.4mm solid #000;background:transparent}
+              .lbl-prev .ellipse{border:0.4mm solid #000;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2.1mm;line-height:1.3;white-space:normal;position:absolute}
+            </style>
+            <div id="html-preview-inner"></div>
+          </div>
         </div>
         <div style="font-size:11px;color:var(--text3);margin-top:8px;text-align:center">
-          Preview a 203dpi, 10x10cm
+          Preview a escala 2.8x — tamaño real 100×100mm
         </div>
       </div>
       <div class="card">
-        <div class="card-title">Campos variables disponibles</div>
+        <div class="card-title">Variables disponibles</div>
         <div style="font-size:12px;color:var(--text2);line-height:2">
           <code style="color:var(--accent)">{PALLET}</code> — Nº pallet (ej. 03)<br>
           <code style="color:var(--accent)">{CAJA}</code> — Nº caja (ej. 12)<br>
-          <code style="color:var(--accent)">{CALIBRE}</code> — ej. 2-3 Kg<br>
+          <code style="color:var(--accent)">{CALIBRE}</code> — ej. 2,5-3 Kg<br>
           <code style="color:var(--accent)">{PESO}</code> — ej. 21,6<br>
           <code style="color:var(--accent)">{LOTE}</code> — ej. OV-05-26<br>
           <code style="color:var(--accent)">{CAPTURA}</code> — ej. 07/05/2026<br>
           <code style="color:var(--accent)">{CADUCIDAD}</code> — ej. 21/05/2026<br>
           <code style="color:var(--accent)">{CLIENTE}</code> — ej. MOWI Poland S.A.<br>
-          <code style="color:var(--accent)">{GGN}</code> — ej. 4052852774918<br>
+          <code style="color:var(--accent)">{TEMP}</code> — ej. 0ºC/+2ºC<br>
           <code style="color:var(--accent)">{BARCODE}</code> — código EAN-13
         </div>
       </div>
     </div>
   </div>
   <div id="zpl-empty" style="text-align:center;padding:40px;color:var(--text3)">
-    No hay plantillas. Crea una con el botón de arriba o pega tu ZPL de Bartender.
+    No hay plantillas. Crea una con el botón de arriba.
   </div>
 </div>
 </div>
@@ -682,8 +688,8 @@ textarea.code-area:focus{border-color:var(--accent)}
     <div class="field"><label>Tipo de envío</label>
       <select id="cl-tipoenvio"><option value="Camión">Camión</option><option value="Pedido">Pedido</option></select>
     </div>
-    <div class="field"><label>Temperatura</label>
-      <select id="cl-temp"><option value="-3/+2">-3ºC / +2ºC</option><option value="0/+2">0ºC / +2ºC</option></select>
+    <div class="field"><label>Temperatura (ej. -3/+2 ó 0/+2)</label>
+      <input type="text" id="cl-temp" placeholder="-3/+2" style="font-family:var(--mono)">
     </div>
   </div>
   <div class="form-grid-3 mb-12">
@@ -1885,7 +1891,7 @@ function printPallet(pi) {
       cliente:   cl?.producido || '',
       ggn:       cargaActual?.ggn || '',
       barcode:   ean,
-      temp:      cl?.temp ? cl.temp + 'ºC' : '-3/+2ºC',
+      temp:      cl?.temp ? cl.temp.split('/').map(t=>t+'ºC').join('/') : '-3ºC/+2ºC',
     };
 
     // Use hardcoded HTML template if available
@@ -1956,7 +1962,7 @@ function buildLabelHTML(palletNum, cajaNum, peso, pallet, cl) {
     {x:20, y:84, fs:7.5, text: (es?'LOTE:  ':'LOT:  ') + (cargaActual?.lote||'')},
     {x:20, y:91, fs:7.5, text: (es?'Fecha captura:  ':'Harvest date:  ') + fmtDateISO(pallet.fechaCaptura)},
     {x:20, y:98, fs:7.5, text: (es?'Consumo preferente: ':'BEST BEFORE DATE: ') + (pallet.fechaCaducidad || cargaActual?.tramos?.find(t=>parseInt(t.desde)<=palletNum&&palletNum<=parseInt(t.hasta))?.caducidad || '')},
-    {x:20, y:105, fs:7.5, text: es?`Conservar entre ${cl?.temp||'-3/+2'}ºC`:`Please keep it chilled at ${cl?.temp||'-3/+2'}ºC`},
+    {x:20, y:105, fs:7.5, text: es?`Conservar entre ${cl?.temp?cl.temp.split('/').map(t=>t+'ºC').join('/'): '-3ºC/+2ºC'}`:`Please keep it chilled at ${cl?.temp?cl.temp.split('/').map(t=>t+'ºC').join('/'): '-3ºC/+2ºC'}`},
     {x:20, y:112, fs:7.5, text: (es?'Producto para: ':'Produced for: ') + (cl?.producido||'')},
     {x:20, y:119, fs:7.5, text: 'GGN: ' + (cargaActual?.ggn||'')},
   ];
@@ -2648,7 +2654,8 @@ function renderEtiquetas() {
   const current = DB.zplTemplates.find(t => t.clave===zplTabActual);
   if (current) {
     document.getElementById('zpl-nombre').value = current.clave;
-    document.getElementById('zpl-editor').value = current.zpl;
+    document.getElementById('zpl-editor').value = current.html || current.zpl || '';
+    updateHtmlPreview();
   }
 }
 
@@ -2656,7 +2663,8 @@ function selectZplTab(clave) {
   zplTabActual = clave;
   const t = DB.zplTemplates.find(x => x.clave===clave);
   document.getElementById('zpl-nombre').value = clave;
-  document.getElementById('zpl-editor').value = t ? t.zpl : '';
+  document.getElementById('zpl-editor').value = t ? (t.html || t.zpl || '') : '';
+  updateHtmlPreview();
   document.querySelectorAll('.zpl-tab').forEach(b => b.classList.toggle('active', b.textContent===clave));
   previewZPL();
 }
@@ -2665,6 +2673,7 @@ function nuevaPlantilla() {
   zplTabActual = '__nueva__';
   document.getElementById('zpl-nombre').value = '';
   document.getElementById('zpl-editor').value = '';
+  updateHtmlPreview();
   document.getElementById('zpl-preview').innerHTML = '<div class="zpl-preview-placeholder">Escribe ZPL y pulsa preview</div>';
   document.getElementById('zpl-layout').style.display = 'grid';
   document.getElementById('zpl-empty').style.display = 'none';
@@ -2672,60 +2681,36 @@ function nuevaPlantilla() {
 
 function schedulePreview() {
   clearTimeout(previewTimer);
-  previewTimer = setTimeout(previewZPL, 1500);
+  previewTimer = setTimeout(updateHtmlPreview, 300);
 }
 
-async function previewZPL() {
-  let zpl = document.getElementById('zpl-editor').value.trim();
-  if (!zpl) return;
-  // Replace variables with sample data
-  zpl = zpl
-    .replace(/{PALLET}/g,'03').replace(/{CAJA}/g,'12')
-    .replace(/{CALIBRE}/g,'2-3 Kg').replace(/{PESO}/g,'21,6')
-    .replace(/{LOTE}/g,'OV-05-26').replace(/{CAPTURA}/g,'07/05/2026')
-    .replace(/{CADUCIDAD}/g,'21/05/2026').replace(/{CLIENTE}/g,'MOWI Poland S.A.')
-    .replace(/{GGN}/g,'4052852774918').replace(/{BARCODE}/g,'241510012160');
-
-  const prev = document.getElementById('zpl-preview');
-  prev.innerHTML = '<div class="zpl-preview-placeholder">Generando preview...</div>';
-  try {
-    const encoded = encodeURIComponent(zpl);
-    const url = `https://api.labelary.com/v1/printers/8dpmm/labels/3.94x3.94/0/${encoded}`;
-    const resp = await fetch(url, {headers:{Accept:'image/png'}});
-    if (resp.ok) {
-      const blob = await resp.blob();
-      const imgUrl = URL.createObjectURL(blob);
-      prev.innerHTML = `<img src="${imgUrl}" alt="Preview etiqueta">`;
-    } else {
-      prev.innerHTML = `<div class="zpl-preview-placeholder">Error ${resp.status}<br>Revisa el ZPL</div>`;
-    }
-  } catch(e) {
-    prev.innerHTML = '<div class="zpl-preview-placeholder">Sin conexión para preview</div>';
+function updateHtmlPreview() {
+  const html = document.getElementById('zpl-editor')?.value.trim() || '';
+  const prev = document.getElementById('html-preview-inner');
+  if (!prev) return;
+  if (!html) {
+    prev.innerHTML = '<div style="color:#999;font-size:3.5mm;text-align:center;padding:10mm">Escribe el HTML de la etiqueta</div>';
+    return;
   }
+  const sample = html
+    .replace(/\{PALLET\}/g,'03').replace(/\{CAJA\}/g,'01')
+    .replace(/\{CALIBRE\}/g,'2,5-3 Kg').replace(/\{PESO\}/g,'21,6')
+    .replace(/\{LOTE\}/g,'OV-05-26').replace(/\{CAPTURA\}/g,'07/05/2026')
+    .replace(/\{CADUCIDAD\}/g,'21/05/2026').replace(/\{CLIENTE\}/g,'MOWI Poland S.A.')
+    .replace(/\{TEMP\}/g,'0ºC/+2ºC').replace(/\{GGN\}/g,'4052852774918')
+    .replace(/data-barcode="true"><\/div>/g,'data-barcode="true" style="background:#555;"></div>');
+  prev.innerHTML = sample.replace(/class="label"/g,'class="lbl-prev"');
 }
 
 async function guardarPlantilla() {
   const clave = document.getElementById('zpl-nombre').value.trim();
-  const zpl   = document.getElementById('zpl-editor').value.trim();
+  const html  = document.getElementById('zpl-editor').value.trim();
   if (!clave) { alert('Pon un nombre a la plantilla'); return; }
-  if (!zpl)   { alert('El ZPL está vacío'); return; }
+  if (!html)  { alert('El HTML está vacío'); return; }
 
-  // Auto-convert ZPL to HTML
-  let htmlTemplate = '';
-  let wMm = 100, hMm = 100, hasBarcode = false;
-  try {
-    const parsed = zplToHtml(zpl);
-    htmlTemplate = parsed.html;
-    wMm = parsed.wMm;
-    hMm = parsed.hMm;
-    hasBarcode = parsed.hasBarcode;
-  } catch(e) {
-    console.warn('ZPL parse error:', e);
-  }
+  const hasBarcode = html.includes('data-barcode');
+  const template = { clave, zpl: '', html, wMm: 100, hMm: 100, hasBarcode };
 
-  const template = { clave, zpl, html: htmlTemplate, wMm, hMm, hasBarcode };
-
-  // Update or insert
   const idxByTab  = DB.zplTemplates.findIndex(t => t.clave === zplTabActual);
   const idxByName = DB.zplTemplates.findIndex(t => t.clave === clave);
   if (idxByTab >= 0) DB.zplTemplates[idxByTab] = template;
@@ -2734,25 +2719,23 @@ async function guardarPlantilla() {
   zplTabActual = clave;
   saveLocal();
 
-  // Sync to Sheets
+  // Sync to Sheets — store HTML in the zpl field for compatibility
   if (navigator.onLine) {
     try {
-      await sheetsPost({ action:'guardarZPL', clave, zpl });
+      await sheetsPost({ action:'guardarZPL', clave, zpl: html });
       setSyncStatus('ok', `Plantilla "${clave}" guardada`);
     } catch(e) {
       setSyncStatus('pending', 'Pendiente de sync');
     }
   }
 
-  // Refresh tabs without losing editor content
   const tabs = document.getElementById('zpl-tabs');
   tabs.innerHTML = DB.zplTemplates.map(t =>
     `<button class="zpl-tab ${t.clave===zplTabActual?'active':''}" onclick="selectZplTab('${t.clave}')">${t.clave}</button>`
   ).join('');
   document.getElementById('zpl-empty').style.display = 'none';
   document.getElementById('zpl-layout').style.display = 'grid';
-
-  alert(`✅ Plantilla "${clave}" guardada correctamente.`);
+  alert(`✅ Plantilla "${clave}" guardada.`);
 }
 
 function eliminarPlantilla() {
@@ -2773,7 +2756,7 @@ function renderClientesList() {
         <div>
           <div style="font-size:16px;font-weight:600;margin-bottom:5px">${cl.nombre}</div>
           <div style="font-size:12px;color:var(--text2);line-height:1.8">
-            ${cl.idioma==='es'?'🇪🇸':'🇬🇧'} · Cad: ${cl.diasCad}d · ${cl.cajasPallet} caj/pallet · Cal.mín: ${cl.calMin} kg · ${cl.temp}ºC<br>
+            ${cl.idioma==='es'?'🇪🇸':'🇬🇧'} · Cad: ${cl.diasCad}d · ${cl.cajasPallet} caj/pallet · Cal.mín: ${cl.calMin} kg · ${cl.temp?cl.temp.split('/').map(t=>t+'ºC').join('/'):'-3ºC/+2ºC'}<br>
             Producido para: <span class="mono">${cl.producido}</span><br>
             Plantilla: <span class="mono">${cl.plantilla||'—'}</span>
           </div>

@@ -921,7 +921,12 @@ async function cargarDesdeSheetsInicial() {
       }
     }
 
-    // ── ZPL Templates — merge Sheets con hardcodeadas ──
+    // ── ZPL Templates — siempre subir hardcodeadas, luego merge con Sheets ──
+    // 1. Subir las 4 hardcodeadas a Sheets si no están
+    for (const [clave, html] of Object.entries(LABEL_HTML_TEMPLATES)) {
+      try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); } catch(e) {}
+    }
+    // 2. Cargar todo de Sheets (hardcodeadas + personalizadas)
     const rZpl = await sheetsPost({ action:'listarZPL' });
     if (rZpl.templates && rZpl.templates.length > 0) {
       const loaded = [];
@@ -931,33 +936,9 @@ async function cargarDesdeSheetsInicial() {
           if (r.zpl) loaded.push({ clave: t.clave, html: r.zpl, zpl: '', wMm:100, hMm:100, hasBarcode: r.zpl.includes('data-barcode') });
         } catch(e) {}
       }
-      // Merge: hardcodeadas + Sheets (Sheets gana si hay conflicto de nombre)
-      const sheetsMap = {};
-      loaded.forEach(t => sheetsMap[t.clave] = t);
-      const hardcoded = Object.entries(LABEL_HTML_TEMPLATES).map(([clave, html]) => ({
-        clave, html, zpl: '', wMm:100, hMm:100, hasBarcode: html.includes('data-barcode')
-      }));
-      const merged = [...hardcoded];
-      for (const t of loaded) {
-        if (!merged.find(m => m.clave === t.clave)) merged.push(t);
-        else { const idx = merged.findIndex(m => m.clave === t.clave); merged[idx] = t; }
-      }
-      DB.zplTemplates = merged;
-      localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
-      // Subir hardcodeadas que falten en Sheets
-      for (const t of hardcoded) {
-        if (!sheetsMap[t.clave]) {
-          try { await sheetsPost({ action:'guardarZPL', clave: t.clave, zpl: t.html }); } catch(e) {}
-        }
-      }
-    } else {
-      // No hay nada en Sheets — usar hardcodeadas y subirlas
-      DB.zplTemplates = Object.entries(LABEL_HTML_TEMPLATES).map(([clave, html]) => ({
-        clave, html, zpl: '', wMm:100, hMm:100, hasBarcode: html.includes('data-barcode')
-      }));
-      localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
-      for (const [clave, html] of Object.entries(LABEL_HTML_TEMPLATES)) {
-        try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); } catch(e) {}
+      if (loaded.length > 0) {
+        DB.zplTemplates = loaded;
+        localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
       }
     }
 

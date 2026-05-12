@@ -2634,9 +2634,11 @@ function renderEtiquetas() {
   const empty = document.getElementById('zpl-empty');
 
   if (!DB.zplTemplates.length) {
-    tabs.innerHTML=''; layout.style.display='none'; empty.style.display='block';
-    zplTabActual = null;
-    return;
+    // Load hardcoded templates as default
+    DB.zplTemplates = Object.entries(LABEL_HTML_TEMPLATES).map(([clave, html]) => ({
+      clave, html, zpl: '', wMm: 100, hMm: 100, hasBarcode: html.includes('data-barcode')
+    }));
+    saveLocal();
   }
   empty.style.display = 'none';
   layout.style.display = 'grid';

@@ -921,19 +921,43 @@ async function cargarDesdeSheetsInicial() {
       }
     }
 
-    // ── ZPL Templates ──
+    // ── ZPL Templates — merge Sheets con hardcodeadas ──
     const rZpl = await sheetsPost({ action:'listarZPL' });
     if (rZpl.templates && rZpl.templates.length > 0) {
       const loaded = [];
       for (const t of rZpl.templates) {
         try {
           const r = await sheetsPost({ action:'cargarZPL', clave: t.clave });
-          if (r.zpl) loaded.push({ clave: t.clave, zpl: r.zpl });
+          if (r.zpl) loaded.push({ clave: t.clave, html: r.zpl, zpl: '', wMm:100, hMm:100, hasBarcode: r.zpl.includes('data-barcode') });
         } catch(e) {}
       }
-      if (loaded.length > 0) {
-        DB.zplTemplates = loaded;
-        localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
+      // Merge: hardcodeadas + Sheets (Sheets gana si hay conflicto de nombre)
+      const sheetsMap = {};
+      loaded.forEach(t => sheetsMap[t.clave] = t);
+      const hardcoded = Object.entries(LABEL_HTML_TEMPLATES).map(([clave, html]) => ({
+        clave, html, zpl: '', wMm:100, hMm:100, hasBarcode: html.includes('data-barcode')
+      }));
+      const merged = [...hardcoded];
+      for (const t of loaded) {
+        if (!merged.find(m => m.clave === t.clave)) merged.push(t);
+        else { const idx = merged.findIndex(m => m.clave === t.clave); merged[idx] = t; }
+      }
+      DB.zplTemplates = merged;
+      localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
+      // Subir hardcodeadas que falten en Sheets
+      for (const t of hardcoded) {
+        if (!sheetsMap[t.clave]) {
+          try { await sheetsPost({ action:'guardarZPL', clave: t.clave, zpl: t.html }); } catch(e) {}
+        }
+      }
+    } else {
+      // No hay nada en Sheets — usar hardcodeadas y subirlas
+      DB.zplTemplates = Object.entries(LABEL_HTML_TEMPLATES).map(([clave, html]) => ({
+        clave, html, zpl: '', wMm:100, hMm:100, hasBarcode: html.includes('data-barcode')
+      }));
+      localStorage.setItem('zplTemplates', JSON.stringify(DB.zplTemplates));
+      for (const [clave, html] of Object.entries(LABEL_HTML_TEMPLATES)) {
+        try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); } catch(e) {}
       }
     }
 
@@ -1852,9 +1876,9 @@ function checkFinish() {
 // ════════════════════════════════════════════════════════
 const LABEL_HTML_TEMPLATES = {
   "GENERICA INGLES": `<div class="label"> <div class="box" style="left:28mm; top:8.12mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:69mm; top:8.12mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:15.88mm; top:46.62mm; width:26.25mm; height:10mm"></div> <div class="box" style="left:63.5mm; top:46.62mm; width:25.62mm; height:10mm"></div> <div class="ellipse" style="left:71.75mm; top:67.5mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div> <div style="left:7mm; top:10.25mm; font-size:3.5mm">PALLET No:</div> <div style="left:28mm; top:9mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div> <div style="left:51mm; top:10.25mm; font-size:3.5mm">BOX No:</div> <div style="left:69mm; top:9mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div> <div style="left:7mm; top:19.5mm; font-size:3.5mm">Rainbow Trout, Head/on &amp; Gutted, Premium Quality</div> <div style="left:7mm; top:24.62mm; font-size:3.5mm">Farmed in freshwater. Farmed in Spain Fishfarm</div> <div style="left:7mm; top:29.75mm; font-size:3.5mm">Lat: Oncorchyncus Mykiss. FAO CODE: TRR</div> <div style="left:7mm; top:34.88mm; font-size:3.5mm">Farm site: Piscifactoria Ind. el Zarzalejo, S.L.</div> <div style="left:7mm; top:40mm; font-size:3.5mm">EL Jardin (Albacete)/ Spain</div> <div style="left:7mm; top:49.5mm; font-size:3.5mm">Size:</div> <div style="left:15.88mm; top:48.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div> <div style="left:45mm; top:49.5mm; font-size:3.5mm">Net Weight:</div> <div style="left:63.5mm; top:48.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div> <div style="left:7mm; top:62.88mm; font-size:3.5mm">LOT: {LOTE}</div> <div style="left:7mm; top:68mm; font-size:3.5mm">Harvest date: {CAPTURA}</div> <div style="left:7mm; top:73.12mm; font-size:3.5mm">BEST BEFORE DATE: {CADUCIDAD}</div> <div style="left:7mm; top:78.25mm; font-size:3.5mm">Please keep it chilled at {TEMP}</div> <div style="left:7mm; top:83.38mm; font-size:3.5mm">Produced for: {CLIENTE}</div> <div style="left:7mm; top:88.5mm; font-size:3.5mm">GGN: 4052852774918</div> </div>`,
-  "GENERICA INGLES_CODIGO DE BARRAS": `<div class="label"><div class="box" style="left:27mm; top:4.88mm; width:18.12mm; height:7.5mm"></div><div class="box" style="left:69mm; top:4.88mm; width:18.12mm; height:7.5mm"></div><div class="box" style="left:15.88mm; top:36.62mm; width:26.25mm; height:10mm"></div><div class="box" style="left:63.5mm; top:36.62mm; width:25.62mm; height:10mm"></div><div class="ellipse" style="left:71.75mm; top:51.25mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div><div style="left:7mm; top:6.75mm; font-size:3.5mm">PALLET No:</div><div style="left:25.88mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div><div style="left:51mm; top:6.75mm; font-size:3.5mm">BOX No:</div><div style="left:69mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div><div style="left:7mm; top:15.5mm; font-size:3.1mm">Rainbow Trout, Head/on &amp; Gutted, Premium Quality</div><div style="left:7mm; top:19.4mm; font-size:3.1mm">Farmed in freshwater. Farmed in Spain Fishfarm</div><div style="left:7mm; top:23.2mm; font-size:3.1mm">Lat: Oncorchyncus Mykiss. FAO CODE: TRR</div><div style="left:7mm; top:27.1mm; font-size:3.1mm">Farm site: Piscifactoria Ind. el Zarzalejo, S.L.</div><div style="left:7mm; top:31mm; font-size:3.1mm">EL Jardin (Albacete)/ Spain</div><div style="left:7mm; top:39.5mm; font-size:3.5mm">Size:</div><div style="left:14.5mm; top:38.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div><div style="left:45mm; top:39.5mm; font-size:3.5mm">Net Weight:</div><div style="left:63.5mm; top:38.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div><div style="left:7mm; top:49.5mm; font-size:3.1mm">LOT: {LOTE}</div><div style="left:7mm; top:53.4mm; font-size:3.1mm">Harvest date: {CAPTURA}</div><div style="left:7mm; top:57.2mm; font-size:3.1mm">BEST BEFORE DATE: {CADUCIDAD}</div><div style="left:7mm; top:61.1mm; font-size:3.1mm">Please keep it chilled at {TEMP}</div><div style="left:7mm; top:65mm; font-size:3.1mm">Produced for: {CLIENTE}</div><div style="left:7mm; top:68.9mm; font-size:3.1mm">GGN: 4052852774918</div><div style="left:8mm; top:76.25mm; width:80mm; height:15mm" data-barcode="true"></div></div>`,
+  "GENERICA INGLES_CODIGO DE BARRAS": `<div class="label"><div class="box" style="left:27mm; top:4.88mm; width:18.12mm; height:7.5mm"></div><div class="box" style="left:69mm; top:4.88mm; width:18.12mm; height:7.5mm"></div><div class="box" style="left:15.88mm; top:36.62mm; width:26.25mm; height:10mm"></div><div class="box" style="left:63.5mm; top:36.62mm; width:25.62mm; height:10mm"></div><div class="ellipse" style="left:71.75mm; top:51.25mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div><div style="left:7mm; top:6.75mm; font-size:3.5mm">PALLET No:</div><div style="left:25.88mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div><div style="left:51mm; top:6.75mm; font-size:3.5mm">BOX No:</div><div style="left:69mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div><div style="left:7mm; top:15.5mm; font-size:3.1mm">Rainbow Trout, Head/on &amp; Gutted, Premium Quality</div><div style="left:7mm; top:19.4mm; font-size:3.1mm">Farmed in freshwater. Farmed in Spain Fishfarm</div><div style="left:7mm; top:23.2mm; font-size:3.1mm">Lat: Oncorchyncus Mykiss. FAO CODE: TRR</div><div style="left:7mm; top:27.1mm; font-size:3.1mm">Farm site: Piscifactoria Ind. el Zarzalejo, S.L.</div><div style="left:7mm; top:31mm; font-size:3.1mm">EL Jardin (Albacete)/ Spain</div><div style="left:7mm; top:39.5mm; font-size:3.5mm">Size:</div><div style="left:14.5mm; top:38.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div><div style="left:45mm; top:39.5mm; font-size:3.5mm">Net Weight:</div><div style="left:63.5mm; top:38.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div><div style="left:7mm; top:49.5mm; font-size:3.1mm">LOT: {LOTE}</div><div style="left:7mm; top:53.4mm; font-size:3.1mm">Harvest date: {CAPTURA}</div><div style="left:7mm; top:57.2mm; font-size:3.1mm">BEST BEFORE DATE: {CADUCIDAD}</div><div style="left:7mm; top:61.1mm; font-size:3.1mm">Please keep it chilled at {TEMP}</div><div style="left:7mm; top:65mm; font-size:3.1mm">Produced for: {CLIENTE}</div><div style="left:7mm; top:68.9mm; font-size:3.1mm">GGN: 4052852774918</div><div style="left:8mm; top:76.25mm; width:80mm; height:15mm;position:absolute;;position:absolute;" data-barcode="true"></div></div>`,
   "GENERICA ESPAÑOL": `<div class="label"> <div class="box" style="left:27mm; top:8.12mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:69mm; top:8.12mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:19.5mm; top:46.62mm; width:26.25mm; height:10mm"></div> <div class="box" style="left:64.5mm; top:46.62mm; width:25.62mm; height:10mm"></div> <div class="ellipse" style="left:71.75mm; top:67.5mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div> <div style="left:7mm; top:10.25mm; font-size:3.5mm">PALET Nº:</div> <div style="left:27mm; top:9mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div> <div style="left:51mm; top:10.25mm; font-size:3.5mm">CAJA Nº:</div> <div style="left:69mm; top:9mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div> <div style="left:7mm; top:19.5mm; font-size:3.5mm">Trucha Arcoiris, Eviscerada, Calidad Premium</div> <div style="left:7mm; top:24.62mm; font-size:3.5mm">Producto Fresco ACUICULTURA. Origen España</div> <div style="left:7mm; top:29.75mm; font-size:3.5mm">Lat: Oncorhynchus Mykiss. CÓDIGO FAO: TRR</div> <div style="left:7mm; top:34.88mm; font-size:3.5mm">Producido por: Piscifactoría Ind. el Zarzalejo, S.L.</div> <div style="left:7mm; top:40mm; font-size:3.5mm">El Jardín (Albacete)/ España</div> <div style="left:7mm; top:49.5mm; font-size:3.5mm">Calibre:</div> <div style="left:18mm; top:48.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div> <div style="left:47mm; top:49.5mm; font-size:3.5mm">Peso Neto:</div> <div style="left:63.5mm; top:48.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div> <div style="left:7mm; top:62.88mm; font-size:3.5mm">LOTE: {LOTE}</div> <div style="left:7mm; top:68mm; font-size:3.5mm">Fecha captura: {CAPTURA}</div> <div style="left:7mm; top:73.12mm; font-size:3.5mm">Consumo preferente: {CADUCIDAD}</div> <div style="left:7mm; top:78.25mm; font-size:3.5mm">Conservar entre temperaturas de -3°C y +2°C</div> <div style="left:7mm; top:83.38mm; font-size:3.5mm">Producido para: {CLIENTE}</div> <div style="left:7mm; top:88.5mm; font-size:3.5mm">GGN: 4052852774918</div> </div>`,
-  "GENERICA ESPAÑOL_CODIGO DE BARRAS": `<div class="label"> <div class="box" style="left:27mm; top:4.88mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:69mm; top:4.88mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:19.5mm; top:36.62mm; width:26.25mm; height:10mm"></div> <div class="box" style="left:64.5mm; top:36.62mm; width:25.62mm; height:10mm"></div> <div class="ellipse" style="left:71.75mm; top:51.25mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div> <div style="left:7mm; top:6.75mm; font-size:3.5mm">PALET Nº:</div> <div style="left:27mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div> <div style="left:51mm; top:6.75mm; font-size:3.5mm">CAJA Nº:</div> <div style="left:69mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div> <div style="left:7mm; top:15.5mm; font-size:3.1mm">Trucha Arcoiris, Eviscerada, Calidad Premium</div> <div style="left:7mm; top:19.4mm; font-size:3.1mm">Producto Fresco ACUICULTURA. Origen España</div> <div style="left:7mm; top:23.2mm; font-size:3.1mm">Lat: Oncorhynchus Mykiss. CÓDIGO FAO: TRR</div> <div style="left:7mm; top:27.1mm; font-size:3.1mm">Producido por: Piscifactoría Ind. el Zarzalejo, S.L.</div> <div style="left:7mm; top:31mm; font-size:3.1mm">El Jardín (Albacete)/ España</div> <div style="left:7mm; top:39.5mm; font-size:3.5mm">Calibre:</div> <div style="left:18mm; top:38.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div> <div style="left:47mm; top:39.5mm; font-size:3.5mm">Peso Neto:</div> <div style="left:63.5mm; top:38.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div> <div style="left:7mm; top:49.5mm; font-size:3.1mm">LOTE: {LOTE}</div> <div style="left:7mm; top:53.4mm; font-size:3.1mm">Fecha captura: {CAPTURA}</div> <div style="left:7mm; top:57.2mm; font-size:3.1mm">Consumo preferente: {CADUCIDAD}</div> <div style="left:7mm; top:61.1mm; font-size:3.1mm">Conservar entre temperaturas de -3°C y +2°C</div> <div style="left:7mm; top:65mm; font-size:3.1mm">Producido para: {CLIENTE}</div> <div style="left:7mm; top:68.9mm; font-size:3.1mm">GGN: 4052852774918</div> <div style="left:8mm; top:76.25mm; width:80mm; height:15mm" data-barcode="true"></div> </div>`,
+  "GENERICA ESPAÑOL_CODIGO DE BARRAS": `<div class="label"> <div class="box" style="left:27mm; top:4.88mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:69mm; top:4.88mm; width:18.12mm; height:7.5mm"></div> <div class="box" style="left:19.5mm; top:36.62mm; width:26.25mm; height:10mm"></div> <div class="box" style="left:64.5mm; top:36.62mm; width:25.62mm; height:10mm"></div> <div class="ellipse" style="left:71.75mm; top:51.25mm; width:17.38mm; height:10.25mm">ES<br>1200021/AB<br>CE</div> <div style="left:7mm; top:6.75mm; font-size:3.5mm">PALET Nº:</div> <div style="left:27mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{PALLET}</div> <div style="left:51mm; top:6.75mm; font-size:3.5mm">CAJA Nº:</div> <div style="left:69mm; top:5.5mm; width:18.12mm; text-align:center; font-size:5.6mm; font-weight:700">{CAJA}</div> <div style="left:7mm; top:15.5mm; font-size:3.1mm">Trucha Arcoiris, Eviscerada, Calidad Premium</div> <div style="left:7mm; top:19.4mm; font-size:3.1mm">Producto Fresco ACUICULTURA. Origen España</div> <div style="left:7mm; top:23.2mm; font-size:3.1mm">Lat: Oncorhynchus Mykiss. CÓDIGO FAO: TRR</div> <div style="left:7mm; top:27.1mm; font-size:3.1mm">Producido por: Piscifactoría Ind. el Zarzalejo, S.L.</div> <div style="left:7mm; top:31mm; font-size:3.1mm">El Jardín (Albacete)/ España</div> <div style="left:7mm; top:39.5mm; font-size:3.5mm">Calibre:</div> <div style="left:18mm; top:38.5mm; width:26.25mm; text-align:center; font-size:5.6mm; font-weight:700">{CALIBRE}</div> <div style="left:47mm; top:39.5mm; font-size:3.5mm">Peso Neto:</div> <div style="left:63.5mm; top:38.5mm; width:25.62mm; text-align:center; font-size:5.6mm; font-weight:700">{PESO} Kg</div> <div style="left:7mm; top:49.5mm; font-size:3.1mm">LOTE: {LOTE}</div> <div style="left:7mm; top:53.4mm; font-size:3.1mm">Fecha captura: {CAPTURA}</div> <div style="left:7mm; top:57.2mm; font-size:3.1mm">Consumo preferente: {CADUCIDAD}</div> <div style="left:7mm; top:61.1mm; font-size:3.1mm">Conservar entre temperaturas de -3°C y +2°C</div> <div style="left:7mm; top:65mm; font-size:3.1mm">Producido para: {CLIENTE}</div> <div style="left:7mm; top:68.9mm; font-size:3.1mm">GGN: 4052852774918</div> <div style="left:8mm; top:76.25mm; width:80mm; height:15mm;position:absolute;;position:absolute;" data-barcode="true"></div> </div>`,
 };
 
 const LABEL_CSS = `<style>
@@ -2117,7 +2141,7 @@ function zplToHtml(zpl) {
     }
     else if (el.type === 'barcode') {
       // Placeholder — replaced with real barcode when printing
-      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;width:${el.w}mm;height:${el.h}mm;" data-barcode="true"></div>`;
+      html += `<div style="position:absolute;left:${el.x}mm;top:${el.y}mm;width:${el.w}mm;height:${el.h}mm;;position:absolute;" data-barcode="true"></div>`;
     }
   }
 
@@ -2231,8 +2255,7 @@ async function renderCentralPreview() {
     .replace(/\{CLIENTE\}/g, cl?.producido || '')
     .replace(/\{TEMP\}/g, temp)
     .replace(/\{GGN\}/g, '4052852774918')
-    .replace(/data-barcode="true"><\/div>/g,
-      'data-barcode="true" style="background:repeating-linear-gradient(90deg,#333 0,#333 1.5px,white 1.5px,white 3px);"></div>');
+    .replace(/data-barcode="true"[^>]*><\/div>/g,'data-barcode="true" style="position:relative;"></div>');
 
   // Wrap with preview CSS
   el.style.overflow = 'hidden';
@@ -2250,6 +2273,7 @@ async function renderCentralPreview() {
     </style>
     ${html.replace(/class="label"/g,'class="lbl-prev"')}
   </div>`;
+  el.querySelectorAll('[data-barcode]').forEach(function(b){b.innerHTML=genBarcode('2415100121600');});
 }
 
 // Keep old function as alias
@@ -2709,8 +2733,10 @@ function updateHtmlPreview() {
     .replace(/\{LOTE\}/g,'OV-05-26').replace(/\{CAPTURA\}/g,'07/05/2026')
     .replace(/\{CADUCIDAD\}/g,'21/05/2026').replace(/\{CLIENTE\}/g,'MOWI Poland S.A.')
     .replace(/\{TEMP\}/g,'0ºC/+2ºC').replace(/\{GGN\}/g,'4052852774918')
-    .replace(/data-barcode="true"><\/div>/g,'data-barcode="true" style="background:#555;"></div>');
+    .replace(/data-barcode="true"[^>]*><\/div>/g,'data-barcode="true" style="position:relative;"></div>');
   prev.innerHTML = sample.replace(/class="label"/g,'class="lbl-prev"');
+  // Fill barcode after DOM insert
+  prev.querySelectorAll('[data-barcode]').forEach(el => { el.innerHTML = genBarcode('2415100121600'); });
 }
 
 async function guardarPlantilla() {

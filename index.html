@@ -2195,52 +2195,60 @@ async function renderCentralPreview() {
     el.innerHTML = '<span style="color:#999;font-size:11px;text-align:center;padding:8px">Asigna una plantilla<br>a esta carga</span>';
     return;
   }
-  const tmpl = DB.zplTemplates.find(t => t.clave === cargaActual.plantilla);
-  if (!tmpl) {
+
+  // Use hardcoded HTML template first, then DB templates
+  const htmlTemplate = LABEL_HTML_TEMPLATES[cargaActual.plantilla] ||
+    DB.zplTemplates.find(t => t.clave === cargaActual.plantilla)?.html;
+
+  if (!htmlTemplate) {
     el.innerHTML = '<span style="color:#e85c4a;font-size:11px;text-align:center;padding:8px">Plantilla no encontrada</span>';
     return;
   }
 
-  // Use last active pallet with at least one peso
   const activePallet = [...pallets].reverse().find(p => !p.printed) || pallets[pallets.length-1];
-  if (!activePallet) return;
+  if (!activePallet) { el.innerHTML = '<span style="color:#999;font-size:11px;text-align:center;padding:8px">Añade un pallet<br>para ver la preview</span>'; return; }
+
   const pi = pallets.indexOf(activePallet);
   const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
   const peso = activePallet.pesos.find(x => isValid(x)) || '0';
   const pesoDisplay = String(parseFloat(peso).toFixed(1)).replace('.', ',');
-  const caducidad = getPalletCaducidad(activePallet);
+  const temp = cl?.temp ? cl.temp.split('/').map(t=>t+'ºC').join('/') : '-3ºC/+2ºC';
 
   if (lbl) lbl.textContent = `caja 01 · pallet ${String(pi+1).padStart(2,'0')}`;
 
-  let zpl = tmpl.zpl
-    .replace(/{PALLET}/g, String(pi+1).padStart(2,'0'))
-    .replace(/{CAJA}/g, '01')
-    .replace(/{CALIBRE}/g, getCalibreLabel(activePallet.calibre))
-    .replace(/{PESO}/g, pesoDisplay)
-    .replace(/{LOTE}/g, cargaActual.lote || '—')
-    .replace(/{CAPTURA}/g, fmtDateISO(activePallet.fechaCaptura))
-    .replace(/{CADUCIDAD}/g, caducidad)
-    .replace(/{CLIENTE}/g, cl?.producido || '')
-    .replace(/{GGN}/g, cargaActual.ggn || '')
-    .replace(/{BARCODE}/g, cargaActual.barcode === 'si'
-      ? calcEAN(cargaActual.barcodePrefix || '24151001', parseFloat(peso))
-      : '');
+  const lote = activePallet.tipo === 'Triploide'
+    ? (cargaActual?.loteTrp || cargaActual?.lote || '—')
+    : (cargaActual?.loteOv  || cargaActual?.lote || '—');
 
-  el.innerHTML = '<span style="color:#999;font-size:11px">Actualizando...</span>';
-  try {
-    const encoded = encodeURIComponent(zpl);
-    const url = `https://api.labelary.com/v1/printers/8dpmm/labels/3.94x3.94/0/${encoded}`;
-    const resp = await fetch(url, { headers: { Accept: 'image/png' } });
-    if (resp.ok) {
-      const blob = await resp.blob();
-      const imgUrl = URL.createObjectURL(blob);
-      el.innerHTML = `<img src="${imgUrl}" style="max-width:100%;border-radius:3px;display:block" alt="Preview etiqueta">`;
-    } else {
-      el.innerHTML = `<span style="color:#e85c4a;font-size:11px">Error ${resp.status}</span>`;
-    }
-  } catch(err) {
-    el.innerHTML = '<span style="color:#999;font-size:11px;text-align:center;padding:8px">Sin conexión<br>para preview</span>';
-  }
+  let html = htmlTemplate
+    .replace(/\{PALLET\}/g, String(pi+1).padStart(2,'0'))
+    .replace(/\{CAJA\}/g, '01')
+    .replace(/\{CALIBRE\}/g, getCalibreLabel(activePallet.calibre))
+    .replace(/\{PESO\}/g, pesoDisplay)
+    .replace(/\{LOTE\}/g, lote)
+    .replace(/\{CAPTURA\}/g, fmtDateISO(activePallet.fechaCaptura))
+    .replace(/\{CADUCIDAD\}/g, getPalletCaducidad(activePallet))
+    .replace(/\{CLIENTE\}/g, cl?.producido || '')
+    .replace(/\{TEMP\}/g, temp)
+    .replace(/\{GGN\}/g, '4052852774918')
+    .replace(/data-barcode="true"><\/div>/g,
+      'data-barcode="true" style="background:repeating-linear-gradient(90deg,#333 0,#333 1.5px,white 1.5px,white 3px);"></div>');
+
+  // Wrap with preview CSS
+  const wrapped = `<style>
+    .lbl-prev{position:relative;width:100mm;height:100mm;background:white;font-family:Arial,sans-serif;overflow:hidden}
+    .lbl-prev *{position:absolute;color:#000;line-height:1;white-space:nowrap}
+    .lbl-prev .box{border:0.4mm solid #000;background:transparent}
+    .lbl-prev .ellipse{border:0.4mm solid #000;border-radius:50%;display:flex;align-items:center;justify-content:center;text-align:center;font-size:2.1mm;line-height:1.3;white-space:normal;position:absolute}
+  </style>
+  <div style="transform:scale(0.5);transform-origin:top left;width:100mm;height:100mm">
+    ${html.replace(/class="label"/g,'class="lbl-prev"')}
+  </div>`;
+
+  el.style.height = '110px';
+  el.style.overflow = 'hidden';
+  el.style.background = '#f5f5f5';
+  el.innerHTML = wrapped;
 }
 
 // Keep old function as alias

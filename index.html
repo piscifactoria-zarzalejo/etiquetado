@@ -457,16 +457,21 @@ textarea.code-area:focus{border-color:var(--accent)}
         </div>
       </div>
       <div class="card">
-        <div class="card-title">HTML de la etiqueta
-          <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
-            Variables: {PALLET} {CAJA} {CALIBRE} {PESO} {LOTE} {CAPTURA} {CADUCIDAD} {CLIENTE} {TEMP} {BARCODE}
+        <div class="card-title" style="display:flex;justify-content:space-between;align-items:center;cursor:pointer" onclick="toggleHtmlEditor()">
+          <span>HTML de la etiqueta
+            <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
+              Variables: {PALLET} {CAJA} {CALIBRE} {PESO} {LOTE} {CAPTURA} {CADUCIDAD} {CLIENTE} {TEMP} {BARCODE}
+            </span>
           </span>
+          <span id="html-editor-arrow" style="color:var(--text3);font-size:11px">▶ Ver/editar código</span>
         </div>
-        <textarea class="code-area" id="zpl-editor" rows="22"
-          placeholder="Pega aquí el HTML del div.label. Usa {PALLET}, {CAJA}, {PESO}... para los campos variables."
-          oninput="schedulePreview()"></textarea>
-        <div class="flex gap-8 mt-12">
-          <span style="font-size:11px;color:var(--text3)">La preview usa datos de ejemplo</span>
+        <div id="html-editor-body" style="display:none">
+          <textarea class="code-area" id="zpl-editor" rows="22"
+            placeholder="Pega aquí el HTML del div.label. Usa {PALLET}, {CAJA}, {PESO}... para los campos variables."
+            oninput="schedulePreview()"></textarea>
+          <div class="flex gap-8 mt-12">
+            <span style="font-size:11px;color:var(--text3)">La preview usa datos de ejemplo</span>
+          </div>
         </div>
       </div>
     </div>
@@ -1075,6 +1080,7 @@ async function abrirCarga(id) {
       }
     } catch(e) {}
   }
+  openPalletIds = new Set();
   goView('pesos');
 }
 
@@ -1388,6 +1394,20 @@ function aplicarPiscinaRangos() {
   alert(`✅ Piscinas aplicadas a ${pallets.length} pallets`);
 }
 
+// Track which pallets are open
+let openPalletIds = new Set();
+
+function togglePalletBody(pid) {
+  const body = document.getElementById('pbody-' + pid);
+  const arrow = document.getElementById('pcard-' + pid)?.querySelector('.pallet-header span:last-child');
+  if (!body) return;
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+  if (isOpen) openPalletIds.delete(pid);
+  else openPalletIds.add(pid);
+}
+
 function renderPesos() {
   if (!cargaActual) { goView('home'); return; }
   renderEnvioBanner();
@@ -1395,13 +1415,26 @@ function renderPesos() {
   container.innerHTML = '';
   const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
   pallets.forEach((p, i) => renderPalletCard(p, i, cl));
-  // Open only the last non-printed pallet
-  const lastActive = [...pallets].reverse().find(p => !p.printed);
-  if (lastActive) {
-    const body = document.getElementById('pbody-' + lastActive.id);
-    const arrow = document.getElementById('pcard-' + lastActive.id)?.querySelector('.pallet-header span:last-child');
-    if (body) body.style.display = '';
-    if (arrow) arrow.textContent = '▼';
+  // Restore previously open pallets, or open last active if none were open
+  let anyOpen = false;
+  pallets.forEach(p => {
+    if (openPalletIds.has(p.id)) {
+      const body = document.getElementById('pbody-' + p.id);
+      const arrow = document.getElementById('pcard-' + p.id)?.querySelector('.pallet-header span:last-child');
+      if (body) { body.style.display = ''; anyOpen = true; }
+      if (arrow) arrow.textContent = '▼';
+    }
+  });
+  // Only open last active if nothing was previously open (first time)
+  if (!anyOpen) {
+    const lastActive = [...pallets].reverse().find(p => !p.printed);
+    if (lastActive) {
+      const body = document.getElementById('pbody-' + lastActive.id);
+      const arrow = document.getElementById('pcard-' + lastActive.id)?.querySelector('.pallet-header span:last-child');
+      if (body) body.style.display = '';
+      if (arrow) arrow.textContent = '▼';
+      openPalletIds.add(lastActive.id);
+    }
   }
   loadPiscinaRangos();
   updateStatus();
@@ -1639,6 +1672,15 @@ function navKey(e, pi, ci) {
   }
 }
 
+function toggleHtmlEditor() {
+  const body = document.getElementById('html-editor-body');
+  const arrow = document.getElementById('html-editor-arrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  arrow.textContent = isOpen ? '▶ Ver/editar código' : '▼ Ocultar código';
+  if (!isOpen) schedulePreview();
+}
+
 function toggleBody(id) {
   const b = document.getElementById('pbody-' + id);
   const card = document.getElementById('pcard-' + id);
@@ -1646,6 +1688,8 @@ function toggleBody(id) {
   b.style.display = isOpen ? 'none' : '';
   const arrow = card?.querySelector('.pallet-header span:last-child');
   if (arrow) arrow.textContent = isOpen ? '▶' : '▼';
+  if (isOpen) openPalletIds.delete(id);
+  else openPalletIds.add(id);
 }
 
 function palletSet(i, field, val) {
@@ -2671,6 +2715,8 @@ function renderEtiquetas() {
   if (current) {
     document.getElementById('zpl-nombre').value = current.clave;
     document.getElementById('zpl-editor').value = current.html || current.zpl || '';
+    document.getElementById('html-editor-body').style.display = 'none';
+    const ea1 = document.getElementById('html-editor-arrow'); if(ea1) ea1.textContent='▶ Ver/editar código';
     updateHtmlPreview();
   }
 }
@@ -2680,6 +2726,8 @@ function selectZplTab(clave) {
   const t = DB.zplTemplates.find(x => x.clave===clave);
   document.getElementById('zpl-nombre').value = clave;
   document.getElementById('zpl-editor').value = t ? (t.html || t.zpl || '') : '';
+  document.getElementById('html-editor-body').style.display = 'none';
+  const ea2 = document.getElementById('html-editor-arrow'); if(ea2) ea2.textContent='▶ Ver/editar código';
   updateHtmlPreview();
   document.querySelectorAll('.zpl-tab').forEach(b => b.classList.toggle('active', b.textContent===clave));
   previewZPL();

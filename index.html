@@ -351,9 +351,12 @@ textarea.code-area:focus{border-color:var(--accent)}
     </div>
   </div>
   <div id="pallets-list"></div>
-  <button class="add-pallet-btn" onclick="addPallet()">
-    <span style="font-size:18px">+</span> Añadir pallet
+  <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
+    <button class="btn btn-secondary btn-sm" onclick="colapsarTodos()">⊟ Colapsar todos</button>
+    <button class="add-pallet-btn" onclick="addPallet()">
+      <span style="font-size:18px">+</span> Añadir pallet
   </button>
+  </div>
   <div id="finish-section" class="hidden">
     <div class="card" style="border-color:var(--accent);text-align:center;padding:22px">
       <div style="font-size:18px;margin-bottom:6px">✅ Todos los pallets impresos</div>
@@ -1423,6 +1426,8 @@ function renderPesos() {
   container.innerHTML = '';
   const cl = DB.clientes.find(c => c.id === cargaActual.clienteId);
   pallets.forEach((p, i) => renderPalletCard(p, i, cl));
+  // Collapse all printed pallets first
+  pallets.forEach(p => { if (p.printed) openPalletIds.delete(p.id); });
   // Restore previously open pallets, or open last active if none were open
   let anyOpen = false;
   pallets.forEach(p => {
@@ -1710,6 +1715,16 @@ function toggleHtmlEditor() {
   body.style.display = isOpen ? 'none' : '';
   arrow.textContent = isOpen ? '▶ Ver/editar código' : '▼ Ocultar código';
   if (!isOpen) schedulePreview();
+}
+
+function colapsarTodos() {
+  pallets.forEach(p => {
+    const body = document.getElementById('pbody-' + p.id);
+    const arrow = document.getElementById('pcard-' + p.id)?.querySelector('.pallet-header span:last-child');
+    if (body) body.style.display = 'none';
+    if (arrow) arrow.textContent = '▶';
+    openPalletIds.delete(p.id);
+  });
 }
 
 function toggleBody(id) {
@@ -2545,8 +2560,11 @@ function printBalance() {
     .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
     .pl-printable *{visibility:visible!important}
   }`;
+  const origTitle2 = document.title;
+  document.title = 'Balance de Masas - ' + (cargaActual?.nombre || '');
   setTimeout(()=>{
     window.print();
+    document.title = origTitle2;
     setTimeout(()=>{
       document.body.removeChild(printDiv);
       if(st) st.textContent='';
@@ -2627,8 +2645,11 @@ function printPackingList() {
     .pl-printable *{visibility:visible!important}
   }`;
 
+  const origTitle = document.title;
+  document.title = 'Packing List - ' + (cargaActual?.nombre || '');
   setTimeout(()=>{
     window.print();
+    document.title = origTitle;
     setTimeout(()=>{
       document.body.removeChild(printDiv);
       document.body.removeChild(style);

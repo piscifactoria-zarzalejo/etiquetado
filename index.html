@@ -824,22 +824,23 @@ async function syncToSheets() {
 }
 
 async function syncPallets() {
+  // 1. SIEMPRE guardar en local primero
   saveLocal();
-  // Update carga updatedAt
+  // 2. Actualizar updatedAt de la carga
   if (cargaActual) {
     cargaActual.updatedAt = new Date().toISOString();
     const idx = DB.cargas.findIndex(c => c.id === cargaActual.id);
     if (idx >= 0) DB.cargas[idx] = cargaActual;
     localStorage.setItem('cargas', JSON.stringify(DB.cargas));
   }
-  if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — guardado local'); return; }
-  try {
+  // 3. Subir a Sheets en background — sin bloquear la UI
+  if (navigator.onLine && cargaActual) {
+    sheetsPost({ action:'guardarPalletsCarga', cargaId: cargaActual.id, pallets })
+      .then(() => setSyncStatus('ok','Guardado'))
+      .catch(() => setSyncStatus('pending','Pendiente de sync'));
     setSyncStatus('pending','Guardando...');
-    await sheetsPost({ action:'guardarPalletsCarga', cargaId:cargaActual.id, pallets });
-    setSyncStatus('ok','Guardado');
-  } catch(e) {
-    syncPending = true;
-    setSyncStatus('pending','Pendiente de sync');
+  } else {
+    setSyncStatus('offline','Sin conexión — guardado local');
   }
 }
 
@@ -1048,38 +1049,45 @@ function renderHome() {
 async function abrirCarga(id) {
   cargaActual = DB.cargas.find(c => c.id === id);
   if (!cargaActual) return;
-  // Cargar pallets — primero local, luego sheets
-  const localPallets = localStorage.getItem('pallets_' + id);
-  if (localPallets) {
-    pallets = JSON.parse(localPallets);
-  } else {
-    pallets = [];
-  }
-  // Intentar cargar de sheets en background
+
+  // Cargar pallets local
+  const localRaw = localStorage.getItem('pallets_' + id);
+  const localPallets = localRaw ? JSON.parse(localRaw) : [];
+  pallets = localPallets;
+
   if (navigator.onLine) {
     try {
       const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
-      if (r.pallets && r.pallets.length > 0) {
-        pallets = r.pallets.map(p => ({
-          ...p,
-          id: 'p' + p.palletNum + '_' + id,
-          pesos: p.pesos || new Array(p.cajas).fill(''),
-          fechaCaptura: normalizeDate(p.fechaCaptura),
-        }));
+      const sheetsPallets = (r.pallets || []).map(p => ({
+        ...p,
+        id: 'p' + p.palletNum + '_' + id,
+        pesos: p.pesos || new Array(p.cajas).fill(''),
+        fechaCaptura: normalizeDate(p.fechaCaptura),
+      }));
+
+      if (sheetsPallets.length > localPallets.length) {
+        // Sheets tiene más datos — usar Sheets y actualizar local
+        pallets = sheetsPallets;
         saveLocal();
+      } else if (localPallets.length > sheetsPallets.length) {
+        // Local tiene más datos — subir local a Sheets
+        pallets = localPallets;
+        sheetsPost({ action:'guardarPalletsCarga', cargaId: id, pallets })
+          .catch(e => console.warn('Sync error:', e));
       }
+      // Si son iguales, local gana (más reciente)
     } catch(e) {}
-    // Cargar balance de Sheets si no hay local
+
+    // Balance — solo bajar si no hay local
     try {
       const localBalance = localStorage.getItem('balance_' + id);
       if (!localBalance || localBalance === '{}') {
         const rb = await sheetsPost({ action:'cargarBalance', cargaId: id });
-        if (rb.balance) {
-          localStorage.setItem('balance_' + id, JSON.stringify(rb.balance));
-        }
+        if (rb.balance) localStorage.setItem('balance_' + id, JSON.stringify(rb.balance));
       }
     } catch(e) {}
   }
+
   openPalletIds = new Set();
   goView('pesos');
 }

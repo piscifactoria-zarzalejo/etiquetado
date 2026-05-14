@@ -350,13 +350,13 @@ textarea.code-area:focus{border-color:var(--accent)}
       </div>
     </div>
   </div>
-  <div id="pallets-list"></div>
-  <div style="display:flex;gap:8px;justify-content:center;margin-top:8px">
-    <button class="btn btn-secondary btn-sm" onclick="colapsarTodos()">⊟ Colapsar todos</button>
-    <button class="add-pallet-btn" onclick="addPallet()">
-      <span style="font-size:18px">+</span> Añadir pallet
-  </button>
+  <div style="margin:10px 0">
+    <button class="btn btn-secondary btn-sm" style="width:100%" onclick="colapsarTodos()">⊟ Colapsar todos los pallets</button>
   </div>
+  <div id="pallets-list"></div>
+  <button class="add-pallet-btn" onclick="addPallet()">
+    <span style="font-size:18px">+</span> Añadir pallet
+  </button>
   <div id="finish-section" class="hidden">
     <div class="card" style="border-color:var(--accent);text-align:center;padding:22px">
       <div style="font-size:18px;margin-bottom:6px">✅ Todos los pallets impresos</div>
@@ -1438,17 +1438,7 @@ function renderPesos() {
       if (arrow) arrow.textContent = '▼';
     }
   });
-  // Only open last active if nothing was previously open (first time)
-  if (!anyOpen) {
-    const lastActive = [...pallets].reverse().find(p => !p.printed);
-    if (lastActive) {
-      const body = document.getElementById('pbody-' + lastActive.id);
-      const arrow = document.getElementById('pcard-' + lastActive.id)?.querySelector('.pallet-header span:last-child');
-      if (body) body.style.display = '';
-      if (arrow) arrow.textContent = '▼';
-      openPalletIds.add(lastActive.id);
-    }
-  }
+  // No abrir nada automáticamente — respetar el estado guardado
   loadPiscinaRangos();
   updateStatus();
   checkFinish();
@@ -2021,18 +2011,22 @@ function printPallet(pi) {
     #print-area{display:block!important;position:static!important;background:white}
   }`;
 
+  const scrollY = window.scrollY;
   setTimeout(() => {
     window.print();
     printArea.style.display = 'none';
     printArea.innerHTML = '';
     if (st) st.textContent = '';
     pallets[pi].printed = true;
+    openPalletIds.delete(pallets[pi].id);
     const card = document.getElementById('pcard-' + pallets[pi].id);
     if (card) {
       card.classList.replace('is-active','is-done');
       document.getElementById('pbody-'+pallets[pi].id).style.display = 'none';
     }
     syncPallets(); checkFinish(); updateStatus();
+    // Restore scroll position
+    setTimeout(() => window.scrollTo(0, scrollY), 50);
   }, 150);
 }
 

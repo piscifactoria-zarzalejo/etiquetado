@@ -1052,35 +1052,33 @@ async function abrirCarga(id) {
   cargaActual = DB.cargas.find(c => c.id === id);
   if (!cargaActual) return;
 
-  // Cargar pallets local
   const localRaw = localStorage.getItem('pallets_' + id);
   const localPallets = localRaw ? JSON.parse(localRaw) : [];
-  pallets = localPallets;
 
+  if (localPallets.length > 0) {
+    // Local tiene datos — usarlos siempre, no tocar Sheets al abrir
+    pallets = localPallets;
+  } else {
+    // Sin datos locales — bajar de Sheets
+    pallets = [];
+    if (navigator.onLine) {
+      try {
+        const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
+        if (r.pallets && r.pallets.length > 0) {
+          pallets = r.pallets.map(p => ({
+            ...p,
+            id: p.id || ('p' + p.palletNum + '_' + id),
+            pesos: p.pesos || new Array(p.cajas).fill(''),
+            fechaCaptura: normalizeDate(p.fechaCaptura),
+          }));
+          saveLocal();
+        }
+      } catch(e) {}
+    }
+  }
+
+  // Balance — solo bajar si no hay local
   if (navigator.onLine) {
-    try {
-      const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
-      const sheetsPallets = (r.pallets || []).map(p => ({
-        ...p,
-        id: 'p' + p.palletNum + '_' + id,
-        pesos: p.pesos || new Array(p.cajas).fill(''),
-        fechaCaptura: normalizeDate(p.fechaCaptura),
-      }));
-
-      if (sheetsPallets.length > localPallets.length) {
-        // Sheets tiene más datos — usar Sheets y actualizar local
-        pallets = sheetsPallets;
-        saveLocal();
-      } else if (localPallets.length > sheetsPallets.length) {
-        // Local tiene más datos — subir local a Sheets
-        pallets = localPallets;
-        sheetsPost({ action:'guardarPalletsCarga', cargaId: id, pallets })
-          .catch(e => console.warn('Sync error:', e));
-      }
-      // Si son iguales, local gana (más reciente)
-    } catch(e) {}
-
-    // Balance — solo bajar si no hay local
     try {
       const localBalance = localStorage.getItem('balance_' + id);
       if (!localBalance || localBalance === '{}') {
@@ -1660,6 +1658,7 @@ function renderPesoInputs(p, i) {
         value="${v}" placeholder="0.0" class="${cls}"
         data-pi="${i}" data-ci="${c}" data-pid="${p.id}"
         oninput="updatePeso(${i},${c},this)"
+        onpaste="pastePesos(event,${i},${c})"
         onkeydown="navKey(event,${i},${c})">
       <span class="peso-kg">kg</span>
     </div>`;
@@ -1680,6 +1679,28 @@ function navKey(e, pi, ci) {
     const prev = document.querySelector(`input[data-pi="${pi}"][data-ci="${ci-1}"]`);
     if (prev) { prev.focus(); prev.select(); }
   }
+}
+
+function pastePesos(e, pi, ci) {
+  const text = (e.clipboardData || window.clipboardData).getData('text');
+  const values = text.split(/[\n\r\t]+/).map(v => v.trim().replace(',', '.'))
+    .filter(v => v !== '' && !isNaN(parseFloat(v)));
+  if (values.length <= 1) return; // Pegar normal si es un solo valor
+  e.preventDefault();
+  values.forEach((v, offset) => {
+    const idx = ci + offset;
+    if (idx >= pallets[pi].cajas) return;
+    pallets[pi].pesos[idx] = v;
+    const input = document.querySelector(`input[data-pi="${pi}"][data-ci="${idx}"]`);
+    if (input) {
+      input.value = v;
+      input.classList.remove('filled','error');
+      input.classList.add(isValid(v) ? 'filled' : 'error');
+    }
+  });
+  refreshStats(pi);
+  saveLocal();
+  scheduleSave();
 }
 
 function toggleHtmlEditor() {

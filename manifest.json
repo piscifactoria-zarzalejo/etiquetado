@@ -1,0 +1,16 @@
+{
+  "name": "Etiquetado Trucha — Zarzalejo",
+  "short_name": "Etiquetado",
+  "description": "App de etiquetado para Piscifactoría Ind. el Zarzalejo",
+  "start_url": "/etiquetado/",
+  "display": "standalone",
+  "background_color": "#0f0f1a",
+  "theme_color": "#1a8a5a",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%231a8a5a'/><text y='70' x='50' text-anchor='middle' font-size='60' fill='white'>🐟</text></svg>",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

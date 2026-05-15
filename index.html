@@ -413,6 +413,17 @@ textarea.code-area:focus{border-color:var(--accent)}
 
   <div id="balance-piscinas"></div>
 
+  <!-- TEMPERATURAS DE TRUCHA -->
+  <div class="card" style="margin-top:8px">
+    <div class="card-title">Control de temperaturas de trucha
+      <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
+        🟢 0-2°C óptimo · 🟡 2-6°C correcto · 🔴 &lt;0°C o &gt;6°C alerta
+      </span>
+    </div>
+    <div id="temp-pallets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px"></div>
+    <div style="margin-top:10px;font-size:11px;color:var(--text3)">Solo rellena los pallets que hayas controlado. Los demás déjalos vacíos.</div>
+  </div>
+
   <div class="card" style="margin-top:8px">
     <div class="card-title">Totales del camión</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
@@ -1547,12 +1558,6 @@ function renderPalletCard(p, i, cl) {
             <option value="triploid" ${p.tipo==='triploid'?'selected':''}>Triploide</option>
           </select>
         </div>
-        <div class="meta-field">
-          <label>Tª trucha (°C)</label>
-          <input type="number" step="0.1" min="0" max="30" value="${p.tempTrucha||''}" placeholder="—"
-            style="width:72px;text-align:center;font-family:var(--mono);font-size:13px"
-            oninput="palletSet(${i},'tempTrucha',this.value)">
-        </div>
       </div>
 
       <!-- FILA 2: cajas + peces + calibre -->
@@ -1657,7 +1662,7 @@ function renderPesoInputs(p, i) {
     const cls = v ? (isValid(v) ? 'filled' : 'error') : '';
     return `<div class="peso-row">
       <label>C-${String(c+1).padStart(2,'0')}</label>
-      <input type="number" step="0.1" min="0.1" max="99.9"
+      <input type="text" inputmode="decimal"
         value="${v}" placeholder="0.0" class="${cls}"
         data-pi="${i}" data-ci="${c}" data-pid="${p.id}"
         oninput="updatePeso(${i},${c},this)"
@@ -2388,6 +2393,65 @@ async function saveBalance() {
     try { await sheetsPost({ action:'guardarBalance', cargaId: cargaActual.id, balance: data }); } catch(e) {}
   }
 }
+function getTempColor(t) {
+  const v = parseFloat(t);
+  if (isNaN(v)) return 'var(--bg2)';
+  if (v < 0 || v > 6) return '#ffebeb'; // rojo
+  if (v <= 2) return '#e8f9f0';          // verde óptimo
+  return '#fffbe6';                       // amarillo correcto
+}
+function getTempTextColor(t) {
+  const v = parseFloat(t);
+  if (isNaN(v)) return 'var(--text3)';
+  if (v < 0 || v > 6) return '#c0392b';
+  if (v <= 2) return '#1a8a5a';
+  return '#b7860b';
+}
+function getTempLabel(t) {
+  const v = parseFloat(t);
+  if (isNaN(v)) return '';
+  if (v < 0 || v > 6) return '⚠ Alerta';
+  if (v <= 2) return '✓ Óptimo';
+  return '✓ Correcto';
+}
+
+function renderTempPallets() {
+  const grid = document.getElementById('temp-pallets-grid');
+  if (!grid) return;
+  grid.innerHTML = pallets.map((p, i) => {
+    const t = p.tempTrucha || '';
+    const bg = getTempColor(t);
+    const tc = getTempTextColor(t);
+    const lbl = getTempLabel(t);
+    return `<div style="background:${bg};border:1px solid var(--border2);border-radius:var(--r);padding:8px;text-align:center">
+      <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Pallet ${String(i+1).padStart(2,'0')}</div>
+      <div style="font-size:9px;color:var(--text3);margin-bottom:4px">${p.piscina||'—'}</div>
+      <input type="text" inputmode="decimal" value="${t}" placeholder="—"
+        style="width:60px;text-align:center;font-family:var(--mono);font-size:16px;font-weight:700;color:${tc};background:transparent;border:none;border-bottom:2px solid var(--border2);outline:none;padding:2px 0"
+        oninput="setTempPallet(${i},this.value)">
+      <div style="font-size:9px;color:${tc};margin-top:3px;font-weight:600;height:12px">${lbl}</div>
+    </div>`;
+  }).join('');
+}
+
+function setTempPallet(i, val) {
+  pallets[i].tempTrucha = val;
+  // Update color in real time
+  const inputs = document.querySelectorAll('#temp-pallets-grid input');
+  const inp = inputs[i];
+  if (inp) {
+    const bg = getTempColor(val);
+    const tc = getTempTextColor(val);
+    const lbl = getTempLabel(val);
+    inp.style.color = tc;
+    inp.closest('div').style.background = bg;
+    const lblEl = inp.nextElementSibling;
+    if (lblEl) { lblEl.textContent = lbl; lblEl.style.color = tc; }
+  }
+  saveLocal();
+  scheduleSave();
+}
+
 function getPiscinasAgrupadas() {
   const map = {};
   pallets.forEach((p, i) => {
@@ -2402,6 +2466,7 @@ function getPiscinasAgrupadas() {
 function renderBalance() {
   if (!cargaActual) return;
   document.getElementById('balance-sub').textContent = cargaActual.nombre;
+  renderTempPallets();
   const data = getBalanceData();
   const piscinas = getPiscinasAgrupadas();
   const muestras = data.muestras || {};

@@ -413,17 +413,6 @@ textarea.code-area:focus{border-color:var(--accent)}
 
   <div id="balance-piscinas"></div>
 
-  <!-- TEMPERATURAS DE TRUCHA -->
-  <div class="card" style="margin-top:8px">
-    <div class="card-title">Control de temperaturas de trucha
-      <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">
-        🟢 0-2°C óptimo · 🟡 2-6°C correcto · 🔴 &lt;0°C o &gt;6°C alerta
-      </span>
-    </div>
-    <div id="temp-pallets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px"></div>
-    <div style="margin-top:10px;font-size:11px;color:var(--text3)">Solo rellena los pallets que hayas controlado. Los demás déjalos vacíos.</div>
-  </div>
-
   <div class="card" style="margin-top:8px">
     <div class="card-title">Totales del camión</div>
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px">
@@ -449,6 +438,21 @@ textarea.code-area:focus{border-color:var(--accent)}
       </div>
     </div>
   </div>
+
+  <!-- TEMPERATURAS DE TRUCHA -->
+  <div class="card" style="margin-top:8px">
+    <div class="card-title" style="cursor:pointer;display:flex;justify-content:space-between;align-items:center" onclick="toggleTempSection()">
+      <span>Control de temperaturas de trucha
+        <span style="font-weight:400;color:var(--text3);font-size:10px;margin-left:8px">🟢 0-2°C óptimo · 🟡 2-6°C correcto · 🔴 &lt;0°C o &gt;6°C alerta</span>
+      </span>
+      <span id="temp-section-arrow" style="font-size:11px;color:var(--text3)">▶ Expandir</span>
+    </div>
+    <div id="temp-section-body" style="display:none">
+      <div id="temp-pallets-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:10px"></div>
+      <div style="margin-top:10px;font-size:11px;color:var(--text3)">Solo rellena los pallets que hayas controlado. Los demás déjalos vacíos.</div>
+    </div>
+  </div>
+
 </div>
 </div>
 
@@ -2393,6 +2397,15 @@ async function saveBalance() {
     try { await sheetsPost({ action:'guardarBalance', cargaId: cargaActual.id, balance: data }); } catch(e) {}
   }
 }
+function toggleTempSection() {
+  const body = document.getElementById('temp-section-body');
+  const arrow = document.getElementById('temp-section-arrow');
+  const isOpen = body.style.display !== 'none';
+  body.style.display = isOpen ? 'none' : '';
+  arrow.textContent = isOpen ? '▶ Expandir' : '▼ Contraer';
+  if (!isOpen) renderTempPallets();
+}
+
 function getTempColor(t) {
   const v = parseFloat(t);
   if (isNaN(v)) return 'var(--bg2)';
@@ -2427,7 +2440,7 @@ function renderTempPallets() {
       <div style="font-size:10px;color:var(--text3);margin-bottom:4px">Pallet ${String(i+1).padStart(2,'0')}</div>
       <div style="font-size:9px;color:var(--text3);margin-bottom:4px">${p.piscina||'—'}</div>
       <input type="text" inputmode="decimal" value="${t}" placeholder="—"
-        style="width:60px;text-align:center;font-family:var(--mono);font-size:16px;font-weight:700;color:${tc};background:transparent;border:none;border-bottom:2px solid var(--border2);outline:none;padding:2px 0"
+        style="width:56px;text-align:center;font-family:var(--mono);font-size:18px;font-weight:700;color:${tc};background:var(--bg3);border:1px solid var(--border2);border-radius:var(--r);outline:none;padding:4px 6px;display:block;margin:0 auto"
         oninput="setTempPallet(${i},this.value)">
       <div style="font-size:9px;color:${tc};margin-top:3px;font-weight:600;height:12px">${lbl}</div>
     </div>`;

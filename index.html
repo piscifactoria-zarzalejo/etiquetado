@@ -2837,8 +2837,8 @@ function printPackingListInterno() {
     const tipo = p.tipo === 'triploid' ? 'Triploide' : 'Desovada';
     const lote = p.tipo === 'triploid' ? (cargaActual?.loteTrp || cargaActual?.lote || '—') : (cargaActual?.loteOv || cargaActual?.lote || '—');
     const temp = p.tempTrucha ? p.tempTrucha + '°C' : '—';
-    const td = 'style="border:1px solid #ccc;padding:2px 5px;font-size:9px"';
-    const tdr = 'style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right"';
+    const td = 'style="border:1px solid #ccc;padding:1px 4px;font-size:8px"';
+    const tdr = 'style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right"';
     return `<tr>
       <td ${td}>${String(i+1).padStart(2,'0')}</td>
       <td ${td}>${getCalibreLabel(p.calibre)}</td>
@@ -2849,7 +2849,7 @@ function printPackingListInterno() {
       <td ${tdr}>${total.toFixed(1)}</td>
       <td ${tdr}>${peces||'—'}</td>
       <td ${tdr}>${peces>0?(total/peces).toFixed(3):'—'}</td>
-      <td ${tdr} style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right;color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
+      <td ${tdr} style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right;color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
       <td ${tdr}>${lote}</td>
     </tr>`;
   }).join('');
@@ -2858,15 +2858,15 @@ function printPackingListInterno() {
   const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
   const totPeces = pallets.reduce((s,p) => s+(parseInt(p.peces)||0), 0);
   const tempsRegistradas = pallets.filter(p => p.tempTrucha).length;
-  const th = (txt, right=false) => `<th style="border:1px solid #ccc;padding:3px 5px;font-size:9px;text-align:${right?'right':'left'};background:#f0f0f0">${txt}</th>`;
+  const th = (txt, right=false) => `<th style="border:1px solid #ccc;padding:2px 4px;font-size:8px;text-align:${right?'right':'left'};background:#f0f0f0">${txt}</th>`;
 
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border-bottom:2px solid #000;padding-bottom:6px">
       <div>
-        <div style="font-size:15px;font-weight:700">Packing List — USO INTERNO</div>
-        <div style="font-size:10px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')} &nbsp;|&nbsp; Cliente: ${cl?cl.nombre:'—'} &nbsp;|&nbsp; Lote OV: ${cargaActual?.loteOv||cargaActual?.lote||'—'}${cargaActual?.loteTrp?' &nbsp;|&nbsp; Lote TRP: '+cargaActual.loteTrp:''} &nbsp;|&nbsp; Tª registradas: ${tempsRegistradas}/${pallets.length}</div>
+        <div style="font-size:13px;font-weight:700">Packing List — USO INTERNO</div>
+        <div style="font-size:9px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')} &nbsp;|&nbsp; Cliente: ${cl?cl.nombre:'—'} &nbsp;|&nbsp; Lote OV: ${cargaActual?.loteOv||cargaActual?.lote||'—'}${cargaActual?.loteTrp?' &nbsp;|&nbsp; Lote TRP: '+cargaActual.loteTrp:''} &nbsp;|&nbsp; Tª registradas: ${tempsRegistradas}/${pallets.length}</div>
       </div>
       <div style="font-size:9px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
     </div>
@@ -2876,13 +2876,13 @@ function printPackingListInterno() {
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr style="font-weight:700;background:#f0f0f0">
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px" colspan="5">TOTAL</td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totCajas}</td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totKg.toFixed(1)}</td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totPeces||'—'}</td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
-        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px" colspan="5">TOTAL</td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totCajas}</td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totKg.toFixed(1)}</td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totPeces||'—'}</td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px"></td>
+        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px"></td>
       </tr></tfoot>
     </table>`;
 
@@ -2914,8 +2914,8 @@ function printRegistroPesos() {
     const tipo = p.tipo === 'triploid' ? 'TRP' : 'OV';
     const rows = p.pesos.map((w, ci) =>
       `<tr>
-        <td style="border:1px solid #ccc;padding:1.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
-        <td style="border:1px solid #ccc;padding:1.5px 4px;font-size:8pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 4px;font-size:7.5pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
       </tr>`
     ).join('');
     return `<div style="display:inline-block;vertical-align:top;width:2.5cm;margin:0 0.25cm 0.5cm 0.25cm;break-inside:avoid">
@@ -2926,7 +2926,7 @@ function printRegistroPesos() {
         ${getCalibreLabel(p.calibre)} ${p.piscina||''}<br>${fmtDateISO(p.fechaCaptura)}
       </div>
       <table style="border-collapse:collapse;width:100%">${rows}</table>
-      <div style="background:#ddd;padding:1.5px 4px;font-size:7.5pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:none">
+      <div style="background:#ddd;padding:0.5px 4px;font-size:7pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:none">
         ${total.toFixed(1)} kg
       </div>
     </div>`;

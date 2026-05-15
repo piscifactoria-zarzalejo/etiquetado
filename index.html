@@ -2837,18 +2837,20 @@ function printPackingListInterno() {
     const tipo = p.tipo === 'triploid' ? 'Triploide' : 'Desovada';
     const lote = p.tipo === 'triploid' ? (cargaActual?.loteTrp || cargaActual?.lote || '—') : (cargaActual?.loteOv || cargaActual?.lote || '—');
     const temp = p.tempTrucha ? p.tempTrucha + '°C' : '—';
+    const td = 'style="border:1px solid #ccc;padding:2px 5px;font-size:9px"';
+    const tdr = 'style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right"';
     return `<tr>
-      <td>${String(i+1).padStart(2,'0')}</td>
-      <td>${getCalibreLabel(p.calibre)}</td>
-      <td>${tipo}</td>
-      <td>${p.piscina||'—'}</td>
-      <td class="r">${fmtDateISO(p.fechaCaptura)}</td>
-      <td class="r">${p.cajas}</td>
-      <td class="r">${total.toFixed(1)}</td>
-      <td class="r">${peces||'—'}</td>
-      <td class="r">${peces>0?(total/peces).toFixed(3):'—'}</td>
-      <td class="r" style="color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
-      <td>${lote}</td>
+      <td ${td}>${String(i+1).padStart(2,'0')}</td>
+      <td ${td}>${getCalibreLabel(p.calibre)}</td>
+      <td ${td}>${tipo}</td>
+      <td ${td}>${p.piscina||'—'}</td>
+      <td ${tdr}>${fmtDateISO(p.fechaCaptura)}</td>
+      <td ${tdr}>${p.cajas}</td>
+      <td ${tdr}>${total.toFixed(1)}</td>
+      <td ${tdr}>${peces||'—'}</td>
+      <td ${tdr}>${peces>0?(total/peces).toFixed(3):'—'}</td>
+      <td ${tdr} style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right;color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
+      <td ${tdr}>${lote}</td>
     </tr>`;
   }).join('');
 
@@ -2856,50 +2858,34 @@ function printPackingListInterno() {
   const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
   const totPeces = pallets.reduce((s,p) => s+(parseInt(p.peces)||0), 0);
   const tempsRegistradas = pallets.filter(p => p.tempTrucha).length;
+  const th = (txt, right=false) => `<th style="border:1px solid #ccc;padding:3px 5px;font-size:9px;text-align:${right?'right':'left'};background:#f0f0f0">${txt}</th>`;
 
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:10px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border-bottom:2px solid #000;padding-bottom:6px">
       <div>
-        <div style="font-size:18px;font-weight:700">Packing List — USO INTERNO</div>
-        <div style="font-size:11px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')}</div>
+        <div style="font-size:15px;font-weight:700">Packing List — USO INTERNO</div>
+        <div style="font-size:10px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')} &nbsp;|&nbsp; Cliente: ${cl?cl.nombre:'—'} &nbsp;|&nbsp; Lote OV: ${cargaActual?.loteOv||cargaActual?.lote||'—'}${cargaActual?.loteTrp?' &nbsp;|&nbsp; Lote TRP: '+cargaActual.loteTrp:''} &nbsp;|&nbsp; Tª registradas: ${tempsRegistradas}/${pallets.length}</div>
       </div>
-      <div style="font-size:10px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
-    </div>
-    <div style="font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.08em;color:#1a8a5a;margin-bottom:6px">Datos del envío</div>
-    <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px solid #ddd">
-      <div><div style="font-size:9px;font-weight:700;color:#000;text-transform:uppercase">${es?'Cliente':'Customer'}</div><div style="font-size:12px">${cl?cl.nombre:'—'}</div></div>
-      <div><div style="font-size:9px;font-weight:700;color:#000;text-transform:uppercase">Lote OV</div><div style="font-size:12px;font-family:monospace">${cargaActual?.loteOv||cargaActual?.lote||'—'}</div></div>
-      ${cargaActual?.loteTrp?`<div><div style="font-size:9px;font-weight:700;color:#000;text-transform:uppercase">Lote TRP</div><div style="font-size:12px;font-family:monospace">${cargaActual.loteTrp}</div></div>`:''}
-      <div><div style="font-size:9px;font-weight:700;color:#000;text-transform:uppercase">Tª registradas</div><div style="font-size:12px">${tempsRegistradas} / ${pallets.length} pallets</div></div>
+      <div style="font-size:9px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
     </div>
     <table style="width:100%;border-collapse:collapse">
-      <thead><tr style="background:#f0f0f0">
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:left">Pallet</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:left">Calibre</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:left">Tipo</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:left">Piscina</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">F.Captura</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">Cajas</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">Kg</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">Peces</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">Kg/ud</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right;color:#1a8a5a;font-weight:700">Tª (°C)</th>
-        <th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:left">Lote</th>
+      <thead><tr>
+        ${th('Pallet')}${th('Calibre')}${th('Tipo')}${th('Piscina')}${th('F.Captura',true)}${th('Cajas',true)}${th('Kg',true)}${th('Peces',true)}${th('Kg/ud',true)}${th('Tª°C',true)}${th('Lote',true)}
       </tr></thead>
-      <tbody style="font-size:10px">${rows}</tbody>
-      <tfoot><tr style="font-weight:700;background:#f9f9f9;border-top:2px solid #666">
-        <td style="border:1px solid #ccc;padding:4px 6px" colspan="5">TOTAL</td>
-        <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${totCajas}</td>
-        <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${totKg.toFixed(1)}</td>
-        <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${totPeces||'—'}</td>
-        <td style="border:1px solid #ccc;padding:4px 6px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
-        <td style="border:1px solid #ccc;padding:4px 6px"></td>
-        <td style="border:1px solid #ccc;padding:4px 6px"></td>
+      <tbody>${rows}</tbody>
+      <tfoot><tr style="font-weight:700;background:#f0f0f0">
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px" colspan="5">TOTAL</td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totCajas}</td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totKg.toFixed(1)}</td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totPeces||'—'}</td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
+        <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
       </tr></tfoot>
     </table>
-    <div style="margin-top:10px;font-size:9px;color:#999">Generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO</div>`;
+    <div style="margin-top:4px;font-size:8px;color:#999">Generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO</div>`;
 
   const style = document.createElement('style');
   style.textContent = `.pl-printable .r{text-align:right}`;
@@ -2907,7 +2893,7 @@ function printPackingListInterno() {
   document.body.appendChild(printDiv);
   let st = document.getElementById('dyn-print-css');
   if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
-  st.textContent = `@media print{@page{size:A4 landscape;margin:10mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
+  st.textContent = `@media print{@page{size:A4 landscape;margin:8mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
   const origTitle = document.title;
   document.title = 'PL Interno - ' + (cargaActual?.nombre || '');
   setTimeout(()=>{
@@ -2918,51 +2904,77 @@ function printPackingListInterno() {
 }
 
 function printRegistroPesos() {
-  // One section per pallet with all box weights
-  let sections = pallets.map((p, i) => {
+  const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
+  const nombreCarga = cargaActual?.nombre || '';
+  const fechaCarga = fmtDateISO(cargaActual?.fechaCarga || '');
+
+  // Build one table per pallet — compact, no temperature
+  const palletTables = pallets.map((p, i) => {
     const total = calcTotal(p.pesos);
-    const tipo = p.tipo === 'triploid' ? 'Triploide' : 'Desovada';
-    const lote = p.tipo === 'triploid' ? (cargaActual?.loteTrp||cargaActual?.lote||'—') : (cargaActual?.loteOv||cargaActual?.lote||'—');
-    const pesoRows = p.pesos.map((w, ci) =>
-      `<tr><td style="border:1px solid #ddd;padding:3px 8px;font-size:9px;color:#555">C-${String(ci+1).padStart(2,'0')}</td><td style="border:1px solid #ddd;padding:3px 8px;font-size:10px;font-family:monospace;text-align:right">${w||'—'}</td></tr>`
+    const tipo = p.tipo === 'triploid' ? 'TRP' : 'OV';
+    const rows = p.pesos.map((w, ci) =>
+      `<tr>
+        <td style="border:1px solid #ddd;padding:1px 4px;font-size:8px;color:#666;white-space:nowrap">C-${String(ci+1).padStart(2,'0')}</td>
+        <td style="border:1px solid #ddd;padding:1px 4px;font-size:8.5px;font-family:monospace;text-align:right;font-weight:500">${w||'—'}</td>
+      </tr>`
     ).join('');
-    const temp = p.tempTrucha ? `<div style="margin-top:4px;font-size:9px;color:#1a8a5a;font-weight:700">Tª: ${p.tempTrucha}°C</div>` : '';
-    return `<div style="break-inside:avoid;display:inline-block;vertical-align:top;margin:0 6px 12px 0;min-width:80px">
-      <div style="background:#1a8a5a;color:white;padding:3px 8px;font-size:10px;font-weight:700;border-radius:3px 3px 0 0">
-        Pallet ${String(i+1).padStart(2,'0')}
+    return `<div style="break-inside:avoid;display:inline-block;vertical-align:top;width:calc(16.66% - 4px);margin:0 2px 6px 0;box-sizing:border-box">
+      <div style="background:#1a8a5a;color:white;padding:2px 5px;font-size:8.5px;font-weight:700;border-radius:2px 2px 0 0;display:flex;justify-content:space-between">
+        <span>P-${String(i+1).padStart(2,'0')}</span><span>${tipo}</span>
       </div>
-      <div style="background:#f9f9f9;padding:4px 8px;font-size:9px;color:#555;border:1px solid #ddd;border-top:none">
-        ${getCalibreLabel(p.calibre)} · ${tipo}<br>${p.piscina||'—'} · ${fmtDateISO(p.fechaCaptura)}${temp}
+      <div style="background:#f5f5f5;padding:1px 5px;font-size:7.5px;color:#555;border:1px solid #ddd;border-top:none;white-space:nowrap;overflow:hidden">
+        ${getCalibreLabel(p.calibre)} · ${p.piscina||'—'} · ${fmtDateISO(p.fechaCaptura)}
       </div>
-      <table style="border-collapse:collapse;width:100%">${pesoRows}</table>
-      <div style="background:#eee;padding:3px 8px;font-size:10px;font-weight:700;text-align:right;border:1px solid #ddd;border-top:none">
-        Total: ${total.toFixed(1)} kg
+      <table style="border-collapse:collapse;width:100%">${rows}</table>
+      <div style="background:#e8e8e8;padding:1px 5px;font-size:8px;font-weight:700;text-align:right;border:1px solid #ddd;border-top:none">
+        ${total.toFixed(1)} kg
       </div>
     </div>`;
   }).join('');
 
-  const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
+  const header = `<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
+    <div>
+      <div style="font-size:13px;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
+      <div style="font-size:8.5px;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · Fecha carga: ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
+    </div>
+  </div>`;
+
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:10px">
-      <div>
-        <div style="font-size:16px;font-weight:700">Registro de Pesos — ${cargaActual?.nombre||''}</div>
-        <div style="font-size:10px;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fmtDateISO(cargaActual?.fechaCarga||'')}</div>
-      </div>
-      <div style="font-size:10px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.</div>
-    </div>
-    <div style="column-count:5;column-gap:8px">${sections}</div>
-    <div style="margin-top:10px;font-size:9px;color:#999;border-top:1px solid #ddd;padding-top:6px">
-      Registro generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO
-    </div>`;
+    <table style="width:100%;border-collapse:collapse">
+      <thead>
+        <tr><td style="padding-bottom:6px;border-bottom:2px solid #000;padding-bottom:4px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <div style="font-size:13px;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
+              <div style="font-size:8.5px;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · Fecha carga: ${fechaCarga} &nbsp;·&nbsp; Piscifactoría Ind. el Zarzalejo, S.L.</div>
+            </div>
+          </div>
+        </td></tr>
+        <tr><td style="height:6px"></td></tr>
+      </thead>
+      <tbody>
+        <tr><td>
+          <div style="line-height:0">${palletTables}</div>
+          <div style="margin-top:4px;font-size:7.5px;color:#aaa">Generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO</div>
+        </td></tr>
+      </tbody>
+    </table>`;
 
   document.body.appendChild(printDiv);
   let st = document.getElementById('dyn-print-css');
   if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
-  st.textContent = `@media print{@page{size:A4;margin:10mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
+  st.textContent = `@media print{
+    @page{size:A4;margin:8mm}
+    @page:not(:first){margin-top:8mm}
+    body{margin:0!important}
+    body > *:not(.pl-printable){display:none!important}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
+    .pl-printable *{visibility:visible!important}
+  }`;
   const origTitle = document.title;
-  document.title = 'Registro Pesos - ' + (cargaActual?.nombre || '');
+  document.title = 'Registro Pesos - ' + nombreCarga;
   setTimeout(()=>{
     window.print();
     document.title = origTitle;

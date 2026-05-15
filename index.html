@@ -2919,21 +2919,22 @@ function printRegistroPesos() {
 
   const palletTables = pallets.map((p, i) => {
     const total = calcTotal(p.pesos);
+    const tipo = p.tipo === 'triploid' ? 'TRP' : 'OV';
     const rows = p.pesos.map((w, ci) =>
       `<tr>
-        <td style="border-left:1px solid #ccc;border-right:1px solid #ccc;border-bottom:1px solid #eee;padding:0.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
-        <td style="border-left:1px solid #ccc;border-right:1px solid #ccc;border-bottom:1px solid #eee;padding:0.5px 4px;font-size:7.5pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 4px;font-size:7.5pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
       </tr>`
     ).join('');
     return `<div style="display:inline-block;vertical-align:top;width:2.5cm;margin:0 0.25cm 0.5cm 0.25cm;break-inside:avoid">
-      <div style="background:#1a8a5a;color:white;padding:2px 4px;font-size:7pt;font-weight:700;border:1px solid #1a8a5a;border-bottom:2px solid white">
-        P-${String(i+1).padStart(2,'0')}
+      <div style="background:#1a8a5a;color:white;padding:2px 4px;font-size:7pt;font-weight:700;display:flex;justify-content:space-between">
+        <span>P-${String(i+1).padStart(2,'0')}</span><span>${tipo}</span>
       </div>
-      <div style="background:#f0f0f0;padding:1px 4px;font-size:6pt;color:#444;border:1px solid #ccc;border-top:none;border-bottom:2px solid #aaa;overflow:hidden;white-space:nowrap">
+      <div style="background:#f0f0f0;padding:1px 4px;font-size:6pt;color:#444;border:1px solid #ccc;border-top:none;overflow:hidden;white-space:nowrap">
         ${getCalibreLabel(p.calibre)} ${p.piscina||''}<br>${fmtDateISO(p.fechaCaptura)}
       </div>
       <table style="border-collapse:collapse;width:100%">${rows}</table>
-      <div style="background:#ddd;padding:0.5px 4px;font-size:7pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:2px solid #aaa">
+      <div style="background:#ddd;padding:0.5px 4px;font-size:7pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:none">
         ${total.toFixed(1)} kg
       </div>
     </div>`;

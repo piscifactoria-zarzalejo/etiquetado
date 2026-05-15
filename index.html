@@ -2837,8 +2837,8 @@ function printPackingListInterno() {
     const tipo = p.tipo === 'triploid' ? 'Triploide' : 'Desovada';
     const lote = p.tipo === 'triploid' ? (cargaActual?.loteTrp || cargaActual?.lote || '—') : (cargaActual?.loteOv || cargaActual?.lote || '—');
     const temp = p.tempTrucha ? p.tempTrucha + '°C' : '—';
-    const td = 'style="border:1px solid #ccc;padding:1px 4px;font-size:8px"';
-    const tdr = 'style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right"';
+    const td = 'style="border:1px solid #ccc;padding:4px 6px;font-size:10px"';
+    const tdr = 'style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right"';
     return `<tr>
       <td ${td}>${String(i+1).padStart(2,'0')}</td>
       <td ${td}>${getCalibreLabel(p.calibre)}</td>
@@ -2849,7 +2849,7 @@ function printPackingListInterno() {
       <td ${tdr}>${total.toFixed(1)}</td>
       <td ${tdr}>${peces||'—'}</td>
       <td ${tdr}>${peces>0?(total/peces).toFixed(3):'—'}</td>
-      <td ${tdr} style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right;color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
+      <td ${tdr} style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right;color:${p.tempTrucha?'#1a8a5a':'#999'};font-weight:${p.tempTrucha?'700':'400'}">${temp}</td>
       <td ${tdr}>${lote}</td>
     </tr>`;
   }).join('');
@@ -2858,17 +2858,17 @@ function printPackingListInterno() {
   const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
   const totPeces = pallets.reduce((s,p) => s+(parseInt(p.peces)||0), 0);
   const tempsRegistradas = pallets.filter(p => p.tempTrucha).length;
-  const th = (txt, right=false) => `<th style="border:1px solid #ccc;padding:2px 4px;font-size:8px;text-align:${right?'right':'left'};background:#f0f0f0">${txt}</th>`;
+  const th = (txt, right=false) => `<th style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:${right?'right':'left'};background:#f0f0f0">${txt}</th>`;
 
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;border-bottom:2px solid #000;padding-bottom:6px">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;border-bottom:2px solid #000;padding-bottom:10px">
       <div>
-        <div style="font-size:13px;font-weight:700">Packing List — USO INTERNO</div>
-        <div style="font-size:9px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')} &nbsp;|&nbsp; Cliente: ${cl?cl.nombre:'—'} &nbsp;|&nbsp; Lote OV: ${cargaActual?.loteOv||cargaActual?.lote||'—'}${cargaActual?.loteTrp?' &nbsp;|&nbsp; Lote TRP: '+cargaActual.loteTrp:''} &nbsp;|&nbsp; Tª registradas: ${tempsRegistradas}/${pallets.length}</div>
+        <div style="font-size:18px;font-weight:700">Packing List — USO INTERNO</div>
+        <div style="font-size:11px;color:#555">${cargaActual?.nombre||''} — ${fmtDateISO(cargaActual?.fechaCarga||'')} &nbsp;|&nbsp; Cliente: ${cl?cl.nombre:'—'} &nbsp;|&nbsp; Lote OV: ${cargaActual?.loteOv||cargaActual?.lote||'—'}${cargaActual?.loteTrp?' &nbsp;|&nbsp; Lote TRP: '+cargaActual.loteTrp:''} &nbsp;|&nbsp; Tª registradas: ${tempsRegistradas}/${pallets.length}</div>
       </div>
-      <div style="font-size:9px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
+      <div style="font-size:10px;text-align:right;color:#555">Piscifactoría Ind. el Zarzalejo, S.L.<br>ES 1200021/AB CE</div>
     </div>
     <table style="width:100%;border-collapse:collapse">
       <thead><tr>
@@ -2876,13 +2876,13 @@ function printPackingListInterno() {
       </tr></thead>
       <tbody>${rows}</tbody>
       <tfoot><tr style="font-weight:700;background:#f0f0f0">
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px" colspan="5">TOTAL</td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totCajas}</td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totKg.toFixed(1)}</td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totPeces||'—'}</td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px"></td>
-        <td style="border:1px solid #ccc;padding:1px 4px;font-size:8px"></td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px" colspan="5">TOTAL</td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">${totCajas}</td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">${totKg.toFixed(1)}</td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">${totPeces||'—'}</td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px;text-align:right">${totPeces?(totKg/totPeces).toFixed(3):'—'}</td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px"></td>
+        <td style="border:1px solid #ccc;padding:4px 6px;font-size:10px"></td>
       </tr></tfoot>
     </table>`;
 
@@ -2892,7 +2892,7 @@ function printPackingListInterno() {
   document.body.appendChild(printDiv);
   let st = document.getElementById('dyn-print-css');
   if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
-  st.textContent = `@media print{@page{size:A4 landscape;margin:8mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
+  st.textContent = `@media print{@page{size:A4 landscape;margin:10mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
   const origTitle = document.title;
   document.title = 'PL Interno - ' + (cargaActual?.nombre || '');
   setTimeout(()=>{

@@ -2884,8 +2884,7 @@ function printPackingListInterno() {
         <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
         <td style="border:1px solid #ccc;padding:2px 5px;font-size:9px"></td>
       </tr></tfoot>
-    </table>
-    <div style="margin-top:4px;font-size:8px;color:#999">Generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO</div>`;
+    </table>`;
 
   const style = document.createElement('style');
   style.textContent = `.pl-printable .r{text-align:right}`;
@@ -2908,56 +2907,46 @@ function printRegistroPesos() {
   const nombreCarga = cargaActual?.nombre || '';
   const fechaCarga = fmtDateISO(cargaActual?.fechaCarga || '');
 
-  // Build one table per pallet — compact, no temperature
+  // Each pallet: ~2.5cm wide, ~10cm tall, 0.5cm gap
+  // 6 pallets per row on A4 portrait (21cm - 2*1cm margins = 19cm / (2.5+0.5) = ~6)
   const palletTables = pallets.map((p, i) => {
     const total = calcTotal(p.pesos);
     const tipo = p.tipo === 'triploid' ? 'TRP' : 'OV';
     const rows = p.pesos.map((w, ci) =>
       `<tr>
-        <td style="border:1px solid #ddd;padding:1px 4px;font-size:8px;color:#666;white-space:nowrap">C-${String(ci+1).padStart(2,'0')}</td>
-        <td style="border:1px solid #ddd;padding:1px 4px;font-size:8.5px;font-family:monospace;text-align:right;font-weight:500">${w||'—'}</td>
+        <td style="border:1px solid #ccc;padding:1.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
+        <td style="border:1px solid #ccc;padding:1.5px 4px;font-size:8pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
       </tr>`
     ).join('');
-    return `<div style="break-inside:avoid;display:inline-block;vertical-align:top;width:calc(16.66% - 4px);margin:0 2px 6px 0;box-sizing:border-box">
-      <div style="background:#1a8a5a;color:white;padding:2px 5px;font-size:8.5px;font-weight:700;border-radius:2px 2px 0 0;display:flex;justify-content:space-between">
+    return `<div style="display:inline-block;vertical-align:top;width:2.5cm;margin:0 0.25cm 0.5cm 0.25cm;break-inside:avoid">
+      <div style="background:#1a8a5a;color:white;padding:2px 4px;font-size:7pt;font-weight:700;display:flex;justify-content:space-between">
         <span>P-${String(i+1).padStart(2,'0')}</span><span>${tipo}</span>
       </div>
-      <div style="background:#f5f5f5;padding:1px 5px;font-size:7.5px;color:#555;border:1px solid #ddd;border-top:none;white-space:nowrap;overflow:hidden">
-        ${getCalibreLabel(p.calibre)} · ${p.piscina||'—'} · ${fmtDateISO(p.fechaCaptura)}
+      <div style="background:#f0f0f0;padding:1px 4px;font-size:6pt;color:#444;border:1px solid #ccc;border-top:none;overflow:hidden;white-space:nowrap">
+        ${getCalibreLabel(p.calibre)} ${p.piscina||''}<br>${fmtDateISO(p.fechaCaptura)}
       </div>
       <table style="border-collapse:collapse;width:100%">${rows}</table>
-      <div style="background:#e8e8e8;padding:1px 5px;font-size:8px;font-weight:700;text-align:right;border:1px solid #ddd;border-top:none">
+      <div style="background:#ddd;padding:1.5px 4px;font-size:7.5pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:none">
         ${total.toFixed(1)} kg
       </div>
     </div>`;
   }).join('');
 
-  const header = `<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
-    <div>
-      <div style="font-size:13px;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
-      <div style="font-size:8.5px;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · Fecha carga: ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
-    </div>
-  </div>`;
-
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <table style="width:100%;border-collapse:collapse">
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
       <thead>
-        <tr><td style="padding-bottom:6px;border-bottom:2px solid #000;padding-bottom:4px">
-          <div style="display:flex;justify-content:space-between;align-items:center">
-            <div>
-              <div style="font-size:13px;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
-              <div style="font-size:8.5px;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · Fecha carga: ${fechaCarga} &nbsp;·&nbsp; Piscifactoría Ind. el Zarzalejo, S.L.</div>
-            </div>
+        <tr><td>
+          <div style="border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
+            <div style="font-size:12pt;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
+            <div style="font-size:8pt;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
           </div>
         </td></tr>
-        <tr><td style="height:6px"></td></tr>
       </thead>
       <tbody>
         <tr><td>
-          <div style="line-height:0">${palletTables}</div>
-          <div style="margin-top:4px;font-size:7.5px;color:#aaa">Generado el ${new Date().toLocaleDateString()} — DOCUMENTO INTERNO</div>
+          <div style="text-align:left">${palletTables}</div>
         </td></tr>
       </tbody>
     </table>`;

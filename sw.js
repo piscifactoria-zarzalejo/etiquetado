@@ -1,4 +1,4 @@
-const CACHE_NAME = 'etiquetado-v4';
+const CACHE_NAME = 'etiquetado-v5';
 
 const ASSETS = [
   '/etiquetado/',

@@ -989,6 +989,7 @@ async function syncPallets() {
   } else {
     setSyncStatus('offline','Sin conexión — guardado local');
   }
+  
 }
 
 function saveLocal() {
@@ -1000,7 +1001,44 @@ function saveLocal() {
     localStorage.setItem('pallets_' + cargaActual.id, JSON.stringify(pallets));
   }
 }
+function normalizarPallets(arr, cargaId) {
+  return (arr || []).map((p, idx) => ({
+    ...p,
+    id: p.id || ('p' + (p.palletNum || idx + 1) + '_' + cargaId),
+    cajas: p.cajas || 24,
+    pesos: p.pesos || new Array(p.cajas || 24).fill(''),
+    fechaCaptura: normalizeDate(p.fechaCaptura),
+  }));
+}
 
+function elegirPalletsMasCompletos(localPallets, remotePallets) {
+  localPallets = localPallets || [];
+  remotePallets = remotePallets || [];
+
+  if (localPallets.length > remotePallets.length) {
+    return { pallets: localPallets, origen: 'local' };
+  }
+
+  if (remotePallets.length > localPallets.length) {
+    return { pallets: remotePallets, origen: 'remote' };
+  }
+
+  const localPesos = localPallets.reduce(
+    (s, p) => s + (p.pesos || []).filter(x => x !== '').length,
+    0
+  );
+
+  const remotePesos = remotePallets.reduce(
+    (s, p) => s + (p.pesos || []).filter(x => x !== '').length,
+    0
+  );
+
+  if (localPesos > remotePesos) {
+    return { pallets: localPallets, origen: 'local' };
+  }
+
+  return { pallets: remotePallets, origen: 'remote' };
+}
 async function cargarDesdeSheetsInicial() {
   if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — usando datos locales'); return; }
   try {
@@ -1066,10 +1104,29 @@ async function cargarDesdeSheetsInicial() {
       for (const c of enCurso) {
         const localPallets = localStorage.getItem('pallets_' + c.id);
         if (localPallets) {
-          const lp = JSON.parse(localPallets);
-          if (lp.length > 0) {
-            try { await sheetsPost({ action:'guardarPalletsCarga', cargaId: c.id, pallets: lp }); } catch(e) {}
-          }
+          const lp = normalizarPallets(JSON.parse(localPallets), c.id);
+
+try {
+  const r = await sheetsPost({
+    action: 'cargarPalletsCarga',
+    cargaId: c.id
+  });
+
+  const rp = normalizarPallets(r.pallets || [], c.id);
+  const elegido = elegirPalletsMasCompletos(lp, rp);
+
+  localStorage.setItem('pallets_' + c.id, JSON.stringify(elegido.pallets));
+
+  if (elegido.origen === 'local' && elegido.pallets.length > 0) {
+    await sheetsPost({
+      action: 'guardarPalletsCarga',
+      cargaId: c.id,
+      pallets: elegido.pallets
+    });
+  }
+} catch(e) {
+  console.warn('Error sincronizando pallets de carga', c.id, e);
+}
         }
       }
     }
@@ -1198,39 +1255,61 @@ async function abrirCarga(id) {
   if (!cargaActual) return;
 
   const localRaw = localStorage.getItem('pallets_' + id);
-  const localPallets = localRaw ? JSON.parse(localRaw) : [];
+  const localPallets = localRaw
+    ? normalizarPallets(JSON.parse(localRaw), id)
+    : [];
 
-  if (localPallets.length > 0) {
-    // Local tiene datos — usarlos siempre, no tocar Sheets al abrir
-    pallets = localPallets;
-  } else {
-    // Sin datos locales — bajar de Sheets
-    pallets = [];
-    if (navigator.onLine) {
-      try {
-        const r = await sheetsPost({ action:'cargarPalletsCarga', cargaId: id });
-        if (r.pallets && r.pallets.length > 0) {
-          pallets = r.pallets.map(p => ({
-            ...p,
-            id: p.id || ('p' + p.palletNum + '_' + id),
-            pesos: p.pesos || new Array(p.cajas).fill(''),
-            fechaCaptura: normalizeDate(p.fechaCaptura),
-          }));
-          saveLocal();
-        }
-      } catch(e) {}
+  let remotePallets = [];
+
+  if (navigator.onLine) {
+    try {
+      const r = await sheetsPost({
+        action: 'cargarPalletsCarga',
+        cargaId: id
+      });
+
+      remotePallets = normalizarPallets(r.pallets || [], id);
+    } catch (e) {
+      console.warn('No se pudieron cargar pallets de Supabase:', e);
     }
   }
 
-  // Balance — solo bajar si no hay local
+  const elegido = elegirPalletsMasCompletos(localPallets, remotePallets);
+  pallets = elegido.pallets;
+
+  localStorage.setItem('pallets_' + id, JSON.stringify(pallets));
+
+  if (navigator.onLine && elegido.origen === 'local' && pallets.length > 0) {
+    try {
+      await sheetsPost({
+        action: 'guardarPalletsCarga',
+        cargaId: id,
+        pallets
+      });
+
+      setSyncStatus('ok', 'Pallets locales subidos');
+    } catch (e) {
+      console.error('No se pudieron subir pallets locales:', e);
+      setSyncStatus('pending', 'Pendiente de sync');
+    }
+  }
+
   if (navigator.onLine) {
     try {
       const localBalance = localStorage.getItem('balance_' + id);
       if (!localBalance || localBalance === '{}') {
-        const rb = await sheetsPost({ action:'cargarBalance', cargaId: id });
-        if (rb.balance) localStorage.setItem('balance_' + id, JSON.stringify(rb.balance));
+        const rb = await sheetsPost({
+          action: 'cargarBalance',
+          cargaId: id
+        });
+
+        if (rb.balance) {
+          localStorage.setItem('balance_' + id, JSON.stringify(rb.balance));
+        }
       }
-    } catch(e) {}
+    } catch (e) {
+      console.warn('No se pudo cargar balance:', e);
+    }
   }
 
   openPalletIds = new Set();

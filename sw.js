@@ -1,4 +1,5 @@
-const CACHE_NAME = 'etiquetado-v2';
+const CACHE_NAME = 'etiquetado-v4';
+
 const ASSETS = [
   '/etiquetado/',
   '/etiquetado/index.html',
@@ -21,12 +22,13 @@ self.addEventListener('activate', e => {
 });
 
 self.addEventListener('fetch', e => {
-  // Solo cachear recursos de la propia app, no las llamadas a Sheets
+  // No cachear POST/PUT/DELETE ni llamadas a Supabase
+  if (e.request.method !== 'GET') return;
+  if (e.request.url.includes('supabase.co')) return;
   if (e.request.url.includes('script.google.com')) return;
-  
+
   e.respondWith(
     caches.match(e.request).then(cached => {
-      // Network first para el HTML, cache fallback si no hay internet
       return fetch(e.request)
         .then(response => {
           if (response.ok) {

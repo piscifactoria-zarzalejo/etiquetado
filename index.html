@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#1a8a5a">
-<!-- Manifest desactivado en local: <link rel="manifest" href="manifest.json"> -->
+<link rel="manifest" href="manifest.json">
 <title>Etiquetado Trucha — Zarzalejo</title>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -767,9 +767,12 @@ textarea.code-area:focus{border-color:var(--accent)}
 //  CONFIG
 // ════════════════════════════════════════════════════════
 const SUPABASE_URL = 'https://ccxrxphkipuicixnwsuo.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_tNd5_wo3cRKTWMnX9-AESg_1cGoEZk5';
 
-const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const SUPABASE_KEY = 'sb_publishable_tNd5_wo3cRKTWMnX9-AESg_1cGoEZk5';
+const supabaseClient = supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+);
 
 const CALIBRE_RANGOS_DEFAULT = [
   {id:'c1-15',  label:'1-1,5 Kg',  min:1,   max:1.5},
@@ -816,26 +819,26 @@ let previewTimer = null;
 async function sheetsPost(data) {
   const action = data.action;
 
-  function safeId(prefix) {
-    return prefix + '_' + Date.now() + '_' + Math.random().toString(36).slice(2, 8);
-  }
-
-  function normalizeRows(rows) {
-    return (rows || []).map(r => r.data ?? r);
-  }
-
   if (action === 'cargarClientes') {
-    const { data: rows, error } = await supabaseClient.from('clientes').select('*');
+    const { data: rows, error } = await supabaseClient
+      .from('clientes')
+      .select('*');
+
     if (error) throw error;
-    return { clientes: normalizeRows(rows) };
+    return { clientes: rows.map(r => r.data) };
   }
 
   if (action === 'guardarClientes') {
-    const rows = (data.clientes || []).map(c => {
-      if (!c.id) c.id = safeId('cliente');
-      return { id: c.id, data: c, updated_at: new Date().toISOString() };
-    });
-    const { error } = await supabaseClient.from('clientes').upsert(rows, { onConflict: 'id' });
+    const rows = data.clientes.map(c => ({
+      id: c.id,
+      data: c,
+      updated_at: new Date().toISOString()
+    }));
+
+    const { error } = await supabaseClient
+      .from('clientes')
+      .upsert(rows, { onConflict: 'id' });
+
     if (error) throw error;
     return { ok: true };
   }
@@ -845,59 +848,35 @@ async function sheetsPost(data) {
       .from('cargas')
       .select('*')
       .order('updated_at', { ascending: false });
+
     if (error) throw error;
-    return { cargas: normalizeRows(rows) };
+    return { cargas: rows.map(r => r.data) };
   }
 
   if (action === 'guardarCabeceraCarga') {
-    const c = data.carga || {};
-    if (!c.id) c.id = safeId('carga');
-    const { error } = await supabaseClient.from('cargas').upsert({
-      id: c.id,
-      data: c,
-      estado: c.estado || 'en_curso',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-    if (error) throw error;
-    return { ok: true };
-  }
+    const c = data.carga;
 
-  if (action === 'actualizarEstadoCarga') {
-    const { data: row, error: readError } = await supabaseClient
+    const { error } = await supabaseClient
       .from('cargas')
-      .select('*')
-      .eq('id', data.cargaId)
-      .maybeSingle();
-    if (readError) throw readError;
-    const carga = row?.data || { id: data.cargaId };
-    carga.estado = data.estado;
-    carga.updatedAt = new Date().toISOString();
-    const { error } = await supabaseClient.from('cargas').upsert({
-      id: data.cargaId,
-      data: carga,
-      estado: data.estado,
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'id' });
-    if (error) throw error;
-    return { ok: true };
-  }
+      .upsert({
+        id: c.id,
+        data: c,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'id' });
 
-  if (action === 'eliminarCarga') {
-    if (!data.cargaId) return { ok: false };
-    await supabaseClient.from('pallets').delete().eq('carga_id', data.cargaId);
-    await supabaseClient.from('balances').delete().eq('carga_id', data.cargaId);
-    const { error } = await supabaseClient.from('cargas').delete().eq('id', data.cargaId);
     if (error) throw error;
     return { ok: true };
   }
 
   if (action === 'guardarPalletsCarga') {
-    if (!data.cargaId) throw new Error('guardarPalletsCarga sin cargaId');
-    const { error } = await supabaseClient.from('pallets').upsert({
-      carga_id: data.cargaId,
-      data: data.pallets || [],
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'carga_id' });
+    const { error } = await supabaseClient
+      .from('pallets')
+      .upsert({
+        carga_id: data.cargaId,
+        data: data.pallets,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'carga_id' });
+
     if (error) throw error;
     return { ok: true };
   }
@@ -908,46 +887,31 @@ async function sheetsPost(data) {
       .select('*')
       .eq('carga_id', data.cargaId)
       .maybeSingle();
-    if (error) throw error;
-    return { pallets: row ? (row.data || []) : [] };
-  }
 
-  if (action === 'guardarBalance') {
-    if (!data.cargaId) throw new Error('guardarBalance sin cargaId');
-    const { error } = await supabaseClient.from('balances').upsert({
-      carga_id: data.cargaId,
-      data: data.balance || {},
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'carga_id' });
     if (error) throw error;
-    return { ok: true };
-  }
-
-  if (action === 'cargarBalance') {
-    const { data: row, error } = await supabaseClient
-      .from('balances')
-      .select('*')
-      .eq('carga_id', data.cargaId)
-      .maybeSingle();
-    if (error) throw error;
-    return { balance: row ? (row.data || {}) : {} };
+    return { pallets: row ? row.data : [] };
   }
 
   if (action === 'guardarZPL') {
-    const clave = data.clave || safeId('zpl');
-    const { error } = await supabaseClient.from('zpl_templates').upsert({
-      clave,
-      html: data.zpl || '',
-      updated_at: new Date().toISOString()
-    }, { onConflict: 'clave' });
+    const { error } = await supabaseClient
+      .from('zpl_templates')
+      .upsert({
+        clave: data.clave,
+        html: data.zpl,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'clave' });
+
     if (error) throw error;
     return { ok: true };
   }
 
   if (action === 'listarZPL') {
-    const { data: rows, error } = await supabaseClient.from('zpl_templates').select('clave');
+    const { data: rows, error } = await supabaseClient
+      .from('zpl_templates')
+      .select('clave');
+
     if (error) throw error;
-    return { templates: rows || [] };
+    return { templates: rows };
   }
 
   if (action === 'cargarZPL') {
@@ -956,8 +920,22 @@ async function sheetsPost(data) {
       .select('*')
       .eq('clave', data.clave)
       .maybeSingle();
+
     if (error) throw error;
     return { zpl: row ? row.html : '' };
+  }
+
+  if (action === 'guardarBalance') {
+    const { error } = await supabaseClient
+      .from('balances')
+      .upsert({
+        carga_id: data.cargaId,
+        data: data.balance,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'carga_id' });
+
+    if (error) throw error;
+    return { ok: true };
   }
 
   console.warn('Acción Supabase no implementada:', action, data);
@@ -970,7 +948,7 @@ function setSyncStatus(status, text) {
   document.getElementById('st-text').textContent = text;
 }
 
-async function syncToSupabase() {
+async function syncToSheets() {
   if (!navigator.onLine) { setSyncStatus('offline', 'Sin conexión — datos guardados localmente'); return; }
   try {
     setSyncStatus('pending', 'Sincronizando...');
@@ -985,7 +963,7 @@ async function syncToSupabase() {
       await sheetsPost({ action: 'guardarPalletsCarga', cargaId: cargaActual.id, pallets });
     }
     syncPending = false;
-    setSyncStatus('ok', 'Sincronizado con Supabase');
+    setSyncStatus('ok', 'Sincronizado con Google Sheets');
   } catch(e) {
     syncPending = true;
     setSyncStatus('pending', 'Pendiente de sync');
@@ -1002,7 +980,7 @@ async function syncPallets() {
     if (idx >= 0) DB.cargas[idx] = cargaActual;
     localStorage.setItem('cargas', JSON.stringify(DB.cargas));
   }
-  // 3. Subir a Supabase en background — sin bloquear la UI
+  // 3. Subir a Sheets en background — sin bloquear la UI
   if (navigator.onLine && cargaActual) {
     sheetsPost({ action:'guardarPalletsCarga', cargaId: cargaActual.id, pallets })
       .then(() => setSyncStatus('ok','Guardado'))
@@ -1023,12 +1001,12 @@ function saveLocal() {
   }
 }
 
-async function cargarDesdeSupabaseInicial() {
+async function cargarDesdeSheetsInicial() {
   if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — usando datos locales'); return; }
   try {
     setSyncStatus('pending','Sincronizando...');
 
-    // ── Clientes: Supabase gana (datos de configuración) ──
+    // ── Clientes: Sheets gana (datos de configuración) ──
     const rCl = await sheetsPost({ action:'cargarClientes' });
     if (rCl.clientes && rCl.clientes.length > 0) {
       const seen = new Set();
@@ -1053,11 +1031,11 @@ async function cargarDesdeSupabaseInicial() {
         const local = localMap[id];
         const remote = sheetsMap[id];
         if (!remote) {
-          // Solo en local — subir a Supabase
+          // Solo en local — subir a Sheets
           merged.push(local);
           toUpload.push(local);
         } else if (!local) {
-          // Solo en Supabase — bajar
+          // Solo en Sheets — bajar
           merged.push(remote);
         } else {
           // En ambos — gana el más reciente por updatedAt
@@ -1096,12 +1074,12 @@ async function cargarDesdeSupabaseInicial() {
       }
     }
 
-    // ── ZPL Templates — siempre subir hardcodeadas, luego merge con Supabase ──
-    // 1. Subir las 4 hardcodeadas a Supabase si no están
+    // ── ZPL Templates — siempre subir hardcodeadas, luego merge con Sheets ──
+    // 1. Subir las 4 hardcodeadas a Sheets si no están
     for (const [clave, html] of Object.entries(LABEL_HTML_TEMPLATES)) {
       try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); } catch(e) {}
     }
-    // 2. Cargar todo de Supabase (hardcodeadas + personalizadas)
+    // 2. Cargar todo de Sheets (hardcodeadas + personalizadas)
     const rZpl = await sheetsPost({ action:'listarZPL' });
     if (rZpl.templates && rZpl.templates.length > 0) {
       const loaded = [];
@@ -1124,7 +1102,7 @@ async function cargarDesdeSupabaseInicial() {
   }
 }
 
-window.addEventListener('online',  () => { onlineStatus=true;  syncToSupabase(); });
+window.addEventListener('online',  () => { onlineStatus=true;  syncToSheets(); });
 window.addEventListener('offline', () => { onlineStatus=false; setSyncStatus('offline','Sin conexión'); });
 
 // ════════════════════════════════════════════════════════
@@ -1223,10 +1201,10 @@ async function abrirCarga(id) {
   const localPallets = localRaw ? JSON.parse(localRaw) : [];
 
   if (localPallets.length > 0) {
-    // Local tiene datos — usarlos siempre, no tocar Supabase al abrir
+    // Local tiene datos — usarlos siempre, no tocar Sheets al abrir
     pallets = localPallets;
   } else {
-    // Sin datos locales — bajar de Supabase
+    // Sin datos locales — bajar de Sheets
     pallets = [];
     if (navigator.onLine) {
       try {
@@ -1466,7 +1444,7 @@ async function eliminarCarga() {
   DB.cargas = DB.cargas.filter(x => x.id !== editingCargaId);
   localStorage.removeItem('pallets_' + editingCargaId);
   saveLocal();
-  // Borrar en Supabase
+  // Borrar en Sheets
   if (navigator.onLine) {
     try {
       await sheetsPost({ action: 'eliminarCarga', cargaId: editingCargaId });
@@ -1895,7 +1873,7 @@ function toggleBody(id) {
 function palletSet(i, field, val) {
   pallets[i][field] = val;
   saveLocal(); // Guardar inmediatamente en local
-  scheduleSave(); // Subir a Supabase con debounce
+  scheduleSave(); // Subir a Sheets con debounce
   updateStatus();
 }
 
@@ -1991,7 +1969,7 @@ function updatePeso(pi, ci, input) {
   if (v !== '') input.classList.add(isValid(v) ? 'filled' : 'error');
   refreshStats(pi);
   saveLocal(); // Guardar en local inmediatamente
-  scheduleSave(); // Subir a Supabase con debounce
+  scheduleSave(); // Subir a Sheets con debounce
   const p2 = pallets[pi];
   const filled2 = p2.pesos.filter(x => x !== '').length;
   if (filled2 === p2.cajas && p2.pesos.every(x => isValid(x))) {
@@ -3060,139 +3038,69 @@ function printPackingListInterno() {
 }
 
 function printRegistroPesos() {
-  const totKg = pallets.reduce((s,p) => s + calcTotal(p.pesos), 0);
+  const totKg = pallets.reduce((s,p) => s+calcTotal(p.pesos), 0);
   const nombreCarga = cargaActual?.nombre || '';
   const fechaCarga = fmtDateISO(cargaActual?.fechaCarga || '');
 
   const palletTables = pallets.map((p, i) => {
     const total = calcTotal(p.pesos);
-
+    const tipo = p.tipo === 'triploid' ? 'TRP' : 'OV';
     const rows = p.pesos.map((w, ci) =>
       `<tr>
-        <td style="border:1px solid #ccc;padding:0 1px;font-size:5.5pt;color:#555">C${String(ci+1).padStart(2,'0')}</td>
-<td style="border:1px solid #ccc;padding:0 1px;font-size:5.8pt;font-family:monospace;text-align:right;font-weight:600">${w || '—'}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 3px;font-size:7pt;color:#555">C-${String(ci+1).padStart(2,'0')}</td>
+        <td style="border:1px solid #ccc;padding:0.5px 4px;font-size:7.5pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
       </tr>`
     ).join('');
-
-    return `<div class="rp-pallet">
-      <div class="rp-head">P${String(i+1).padStart(2,'0')}</div>
-      <div class="rp-sub">
-        ${getCalibreLabel(p.calibre)} ${p.piscina || ''}<br>${fmtDateISO(p.fechaCaptura)}
+    return `<div style="display:inline-block;vertical-align:top;width:2.5cm;margin:0 0.25cm 0.5cm 0.25cm;break-inside:avoid">
+      <div style="background:#1a8a5a;color:white;padding:2px 4px;font-size:7pt;font-weight:700;display:flex;justify-content:space-between">
+        <span>P-${String(i+1).padStart(2,'0')}</span><span>${tipo}</span>
       </div>
-      <table class="rp-table">${rows}</table>
-      <div class="rp-total">${total.toFixed(1)} kg</div>
+      <div style="background:#f0f0f0;padding:1px 4px;font-size:6pt;color:#444;border:1px solid #ccc;border-top:none;overflow:hidden;white-space:nowrap">
+        ${getCalibreLabel(p.calibre)} ${p.piscina||''}<br>${fmtDateISO(p.fechaCaptura)}
+      </div>
+      <table style="border-collapse:collapse;width:100%">${rows}</table>
+      <div style="background:#ddd;padding:0.5px 4px;font-size:7pt;font-weight:700;text-align:right;border:1px solid #ccc;border-top:none">
+        ${total.toFixed(1)} kg
+      </div>
     </div>`;
   }).join('');
 
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <div class="rp-title">
-      <div>Registro de Pesos — ${nombreCarga}</div>
-      <span>${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fechaCarga}</span>
-    </div>
-    <div class="rp-grid">${palletTables}</div>
-  `;
+    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
+      <thead>
+        <tr><td style="padding-bottom:6px">
+          <div style="border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
+            <div style="font-size:12pt;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
+            <div style="font-size:8pt;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
+          </div>
+        </td></tr>
+      </thead>
+      <tbody>
+        <tr><td style="vertical-align:top">
+          <div style="text-align:left;line-height:0">${palletTables}</div>
+        </td></tr>
+      </tbody>
+    </table>`;
 
   document.body.appendChild(printDiv);
-
   let st = document.getElementById('dyn-print-css');
-  if (!st) {
-    st = document.createElement('style');
-    st.id = 'dyn-print-css';
-    document.head.appendChild(st);
-  }
-
+  if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
   st.textContent = `@media print{
-    @page{size:A4 portrait;margin:7mm}
+    @page{size:A4;margin:8mm}
     body{margin:0!important}
     body > *:not(.pl-printable){display:none!important}
-    .pl-printable{
-      display:block!important;
-      position:static!important;
-      width:100%!important;
-      background:white;
-      padding:0;
-      font-family:Arial,sans-serif;
-      color:#000;
-    }
-    .pl-printable *{visibility:visible!important;box-sizing:border-box}
-    .rp-title{
-      border-bottom:2px solid #000;
-      margin-bottom:5mm;
-      padding-bottom:2mm;
-      font-size:11pt;
-      font-weight:700;
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-end;
-    }
-    .rp-title span{
-      font-size:7pt;
-      color:#555;
-      font-weight:400;
-    }
-    .rp-grid{
-  display:grid;
-  grid-template-columns:repeat(6, 25mm);
-  grid-auto-rows:100mm;
-  gap:3mm 4mm;
-  justify-content:center;
-  page-break-inside:auto;
-}
-
-.rp-pallet{
-  break-inside:avoid;
-  page-break-inside:avoid;
-  border:1px solid #aaa;
-  width:25mm;
-  height:100mm;
-  overflow:hidden;
-}
-    .rp-head{
-  background:#1a8a5a;
-  color:white;
-  padding:1px 2px;
-  font-size:7pt;
-  font-weight:700;
-  text-align:center;
-}
-
-.rp-sub{
-  background:#f0f0f0;
-  padding:1px 2px;
-  font-size:4.8pt;
-  color:#444;
-  border-bottom:1px solid #ccc;
-  overflow:hidden;
-  white-space:nowrap;
-  line-height:1.1;
-}
-    .rp-table{
-      border-collapse:collapse;
-      width:100%;
-    }
-    .rp-total{
-  background:#ddd;
-  padding:1px 2px;
-  font-size:6pt;
-  font-weight:700;
-  text-align:right;
-  border-top:1px solid #ccc;
-}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
+    .pl-printable *{visibility:visible!important}
   }`;
-
   const origTitle = document.title;
   document.title = 'Registro Pesos - ' + nombreCarga;
-
-  setTimeout(() => {
+  setTimeout(()=>{
     window.print();
     document.title = origTitle;
-    setTimeout(() => {
-      document.body.removeChild(printDiv);
-      if (st) st.textContent = '';
-    }, 500);
-  }, 100);
+    setTimeout(()=>{ document.body.removeChild(printDiv); if(st)st.textContent=''; },500);
+  },100);
 }
 
 // ════════════════════════════════════════════════════════
@@ -3297,7 +3205,7 @@ async function guardarPlantilla() {
   zplTabActual = clave;
   saveLocal();
 
-  // Sync to Supabase — store HTML in the zpl field for compatibility
+  // Sync to Sheets — store HTML in the zpl field for compatibility
   if (navigator.onLine) {
     try {
       await sheetsPost({ action:'guardarZPL', clave, zpl: html });
@@ -3438,33 +3346,12 @@ async function saveCliente() {
   renderClientesList();
 }
 
-async function deleteCliente() {
+function deleteCliente() {
   if (!editingClienteId) return;
-
-  const cl = DB.clientes.find(c => c.id === editingClienteId);
+  const cl = DB.clientes.find(c=>c.id===editingClienteId);
   if (!confirm(`¿Eliminar cliente "${cl?.nombre}"?`)) return;
-
-  const idBorrar = editingClienteId;
-
-  DB.clientes = DB.clientes.filter(c => c.id !== idBorrar);
+  DB.clientes = DB.clientes.filter(c=>c.id!==editingClienteId);
   saveLocal();
-
-  if (navigator.onLine) {
-    try {
-      const { error } = await supabaseClient
-        .from('clientes')
-        .delete()
-        .eq('id', idBorrar);
-
-      if (error) throw error;
-
-      setSyncStatus('ok', 'Cliente eliminado');
-    } catch (e) {
-      console.error('ERROR ELIMINAR CLIENTE:', e);
-      setSyncStatus('pending', 'Pendiente de sync');
-    }
-  }
-
   closeModal('modal-cliente');
   renderClientesList();
 }
@@ -3483,7 +3370,7 @@ function normalizeDate(val) {
   const s = String(val).trim();
   // Already ISO format YYYY-MM-DD
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // Try parsing as date (handles Google Supabase format and others)
+  // Try parsing as date (handles Google Sheets format and others)
   try {
     const d = new Date(s);
     if (!isNaN(d.getTime())) {
@@ -3506,13 +3393,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     m.addEventListener('click', e => { if(e.target===m) m.classList.remove('open'); });
   });
   renderHome();
-  await cargarDesdeSupabaseInicial();
+  await cargarDesdeSheetsInicial();
   renderHome();
 });
 </script>
 
 <script>
-if ('serviceWorker' in navigator && ['http:', 'https:'].includes(location.protocol)) {
+if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/etiquetado/sw.js')
       .then(r => console.log('SW registrado:', r.scope))

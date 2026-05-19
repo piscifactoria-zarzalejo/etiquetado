@@ -937,7 +937,19 @@ async function sheetsPost(data) {
     if (error) throw error;
     return { ok: true };
   }
+if (action === 'cargarBalance') {
+  const { data: row, error } = await supabaseClient
+    .from('balances')
+    .select('*')
+    .eq('carga_id', data.cargaId)
+    .maybeSingle();
 
+  if (error) throw error;
+
+  return {
+    balance: row ? row.data : null
+  };
+}
   console.warn('Acción Supabase no implementada:', action, data);
   return { ok: false };
 }
@@ -1517,39 +1529,68 @@ async function guardarCarga() {
 }
 
 async function eliminarCarga() {
-  if (!editingCargaId) return;
+  if (!editingCargaId) {
+    console.error('No hay editingCargaId para borrar');
+    alert('No se pudo borrar: no hay carga seleccionada.');
+    return;
+  }
 
   const c = DB.cargas.find(x => x.id === editingCargaId);
-  if (!confirm(`¿Eliminar carga "${c?.nombre || editingCargaId}"?`)) return;
-
   const idBorrar = editingCargaId;
 
-  DB.cargas = DB.cargas.filter(x => x.id !== idBorrar);
+  if (!confirm(`¿Eliminar carga "${c?.nombre || idBorrar}"?`)) return;
 
-  if (cargaActual?.id === idBorrar) {
-    cargaActual = null;
-    pallets = [];
-  }
+  console.log('BORRANDO CARGA:', idBorrar);
 
-  localStorage.removeItem('pallets_' + idBorrar);
-  localStorage.removeItem('balance_' + idBorrar);
-  saveLocal();
+  try {
+    if (navigator.onLine) {
+      const delPallets = await supabaseClient
+        .from('pallets')
+        .delete()
+        .eq('carga_id', idBorrar);
 
-  if (navigator.onLine) {
-    try {
-      await supabaseClient.from('pallets').delete().eq('carga_id', idBorrar);
-      await supabaseClient.from('balances').delete().eq('carga_id', idBorrar);
-      await supabaseClient.from('cargas').delete().eq('id', idBorrar);
+      console.log('delete pallets:', delPallets);
 
-      setSyncStatus('ok', 'Carga eliminada');
-    } catch (e) {
-      console.error('ERROR ELIMINAR CARGA:', e);
-      setSyncStatus('pending', 'Pendiente de sync');
+      const delBalances = await supabaseClient
+        .from('balances')
+        .delete()
+        .eq('carga_id', idBorrar);
+
+      console.log('delete balances:', delBalances);
+
+      const delCargas = await supabaseClient
+        .from('cargas')
+        .delete()
+        .eq('id', idBorrar);
+
+      console.log('delete cargas:', delCargas);
+
+      if (delPallets.error) throw delPallets.error;
+      if (delBalances.error) throw delBalances.error;
+      if (delCargas.error) throw delCargas.error;
     }
-  }
 
-  closeModal('modal-carga');
-  goView('home');
+    DB.cargas = DB.cargas.filter(x => x.id !== idBorrar);
+
+    if (cargaActual?.id === idBorrar) {
+      cargaActual = null;
+      pallets = [];
+    }
+
+    localStorage.removeItem('pallets_' + idBorrar);
+    localStorage.removeItem('balance_' + idBorrar);
+    localStorage.setItem('cargas', JSON.stringify(DB.cargas));
+
+    setSyncStatus('ok', 'Carga eliminada');
+
+    closeModal('modal-carga');
+    goView('home');
+
+  } catch (e) {
+    console.error('ERROR ELIMINAR CARGA:', e);
+    alert('No se pudo borrar la carga en Supabase. Mira la consola.');
+    setSyncStatus('pending', 'Error al eliminar');
+  }
 }
 
 async function completarCarga() {

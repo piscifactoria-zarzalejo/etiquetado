@@ -1518,23 +1518,37 @@ async function guardarCarga() {
 
 async function eliminarCarga() {
   if (!editingCargaId) return;
+
   const c = DB.cargas.find(x => x.id === editingCargaId);
-  if (!confirm(`¿Eliminar la carga "${c?.nombre}"?\nEsta acción no se puede deshacer.`)) return;
-  DB.cargas = DB.cargas.filter(x => x.id !== editingCargaId);
-  localStorage.removeItem('pallets_' + editingCargaId);
+  if (!confirm(`¿Eliminar carga "${c?.nombre || editingCargaId}"?`)) return;
+
+  const idBorrar = editingCargaId;
+
+  DB.cargas = DB.cargas.filter(x => x.id !== idBorrar);
+
+  if (cargaActual?.id === idBorrar) {
+    cargaActual = null;
+    pallets = [];
+  }
+
+  localStorage.removeItem('pallets_' + idBorrar);
+  localStorage.removeItem('balance_' + idBorrar);
   saveLocal();
-  // Borrar en Sheets
+
   if (navigator.onLine) {
     try {
-      await sheetsPost({ action: 'eliminarCarga', cargaId: editingCargaId });
+      await supabaseClient.from('pallets').delete().eq('carga_id', idBorrar);
+      await supabaseClient.from('balances').delete().eq('carga_id', idBorrar);
+      await supabaseClient.from('cargas').delete().eq('id', idBorrar);
+
       setSyncStatus('ok', 'Carga eliminada');
-    } catch(e) {
+    } catch (e) {
+      console.error('ERROR ELIMINAR CARGA:', e);
       setSyncStatus('pending', 'Pendiente de sync');
     }
   }
+
   closeModal('modal-carga');
-  cargaActual = null;
-  pallets = [];
   goView('home');
 }
 

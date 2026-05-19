@@ -1052,6 +1052,20 @@ function elegirPalletsMasCompletos(localPallets, remotePallets) {
   return { pallets: remotePallets, origen: 'remote' };
 }
 async function cargarDesdeSheetsInicial() {
+let deletedIds = [];
+
+if (navigator.onLine) {
+  try {
+    const { data } = await supabaseClient
+      .from('deleted_cargas')
+      .select('id');
+
+    deletedIds = (data || []).map(x => x.id);
+
+  } catch(e) {
+    console.warn('No se pudo cargar deleted_cargas', e);
+  }
+}
   if (!navigator.onLine) { setSyncStatus('offline','Sin conexión — usando datos locales'); return; }
   try {
     setSyncStatus('pending','Sincronizando...');
@@ -1071,6 +1085,7 @@ async function cargarDesdeSheetsInicial() {
       rCg.cargas.forEach(c => sheetsMap[c.id] = c);
       const localMap = {};
       DB.cargas.forEach(c => localMap[c.id] = c);
+      DB.cargas = DB.cargas.filter(c => !deletedIds.includes(c.id));
 
       // Merge: para cada ID, usar el más reciente
       const allIds = new Set([...Object.keys(sheetsMap), ...Object.keys(localMap)]);
@@ -1104,6 +1119,7 @@ async function cargarDesdeSheetsInicial() {
         ...c,
         fechaCarga: normalizeDate(c.fechaCarga),
       }));
+      DB.cargas = DB.cargas.filter(c => !deletedIds.includes(c.id));
       localStorage.setItem('cargas', JSON.stringify(DB.cargas));
 
       // Subir cargas locales más recientes
@@ -1544,6 +1560,14 @@ async function eliminarCarga() {
 
   try {
     if (navigator.onLine) {
+
+     await supabaseClient
+    .from('deleted_cargas')
+    .upsert({
+      id: idBorrar,
+      deleted_at: new Date().toISOString()
+    }, { onConflict: 'id' });
+
       const delPallets = await supabaseClient
         .from('pallets')
         .delete()

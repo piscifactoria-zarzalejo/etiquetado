@@ -3209,7 +3209,7 @@ function printRegistroPesos() {
         <td style="border:1px solid #ccc;padding:0.5px 4px;font-size:7.5pt;font-family:monospace;text-align:right;font-weight:600">${w||'—'}</td>
       </tr>`
     ).join('');
-    return `<div style="display:inline-block;vertical-align:top;width:2.5cm;margin:0 0.25cm 0.5cm 0.25cm;break-inside:avoid">
+    return `<div class="rp-pallet">
       <div style="background:#1a8a5a;color:white;padding:2px 4px;font-size:7pt;font-weight:700;display:flex;justify-content:space-between">
         <span>P-${String(i+1).padStart(2,'0')}</span><span>${tipo}</span>
       </div>
@@ -3226,32 +3226,24 @@ function printRegistroPesos() {
   const printDiv = document.createElement('div');
   printDiv.className = 'pl-printable';
   printDiv.innerHTML = `
-    <table style="width:100%;border-collapse:collapse;table-layout:fixed">
-      <thead>
-        <tr><td style="padding-bottom:6px">
-          <div style="border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:6px">
-            <div style="font-size:12pt;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
-            <div style="font-size:8pt;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
-          </div>
-        </td></tr>
-      </thead>
-      <tbody>
-        <tr><td style="vertical-align:top">
-          <div style="text-align:left;line-height:0">${palletTables}</div>
-        </td></tr>
-      </tbody>
-    </table>`;
+    <div style="border-bottom:2px solid #000;padding-bottom:4px;margin-bottom:8px">
+      <div style="font-size:12pt;font-weight:700">Registro de Pesos — ${nombreCarga}</div>
+      <div style="font-size:8pt;color:#555">${pallets.length} pallets · ${totKg.toFixed(1)} kg total · ${fechaCarga} · Piscifactoría Ind. el Zarzalejo, S.L.</div>
+    </div>
+    <div class="rp-grid">${palletTables}</div>`;
 
   document.body.appendChild(printDiv);
   let st = document.getElementById('dyn-print-css');
   if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
   st.textContent = `@media print{
-    @page{size:A4;margin:8mm}
+    @page{size:A4 portrait;margin:8mm}
     body{margin:0!important}
     body > *:not(.pl-printable){display:none!important}
     .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
     .pl-printable *{visibility:visible!important}
-  }`;
+    .rp-grid{display:grid!important;grid-template-columns:repeat(6,2.5cm)!important;gap:0.35cm!important}
+    .rp-pallet{break-inside:avoid!important;page-break-inside:avoid!important;width:100%!important;box-sizing:border-box!important}
+  }
   const origTitle = document.title;
   document.title = 'Registro Pesos - ' + nombreCarga;
   setTimeout(()=>{

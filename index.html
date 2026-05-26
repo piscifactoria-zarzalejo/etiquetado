@@ -3239,10 +3239,11 @@ function printRegistroPesos() {
     @page{size:A4 portrait;margin:8mm}
     body{margin:0!important}
     body > *:not(.pl-printable){display:none!important}
-    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0;font-family:Arial,sans-serif;color:#000!important}
     .pl-printable *{visibility:visible!important}
-    .rp-grid{display:grid!important;grid-template-columns:repeat(6,2.5cm)!important;gap:0.35cm!important}
-    .rp-pallet{break-inside:avoid!important;page-break-inside:avoid!important;width:100%!important;box-sizing:border-box!important}
+    html,body{background:white!important}
+    .rp-grid{display:grid!important;grid-template-columns:repeat(6,2.5cm)!important;gap:0.35cm!important;background:white!important}
+    .rp-pallet{break-inside:avoid!important;page-break-inside:avoid!important;width:100%!important;box-sizing:border-box!important;background:white!important}
   }`;
   const origTitle = document.title;
   document.title = 'Registro Pesos - ' + nombreCarga;

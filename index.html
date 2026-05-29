@@ -2920,7 +2920,8 @@ function printBalance() {
     @page{size:A4;margin:12mm}
     body{margin:0!important;padding:0!important;height:auto!important}
     body > *:not(.pl-printable){display:none!important}
-    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}
+    html,body{background:white!important}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0;font-family:Arial,sans-serif;color:#000!important}
     .pl-printable *{visibility:visible!important}
   }`;
   const origTitle2 = document.title;
@@ -3004,7 +3005,8 @@ function printPackingList() {
     @page{size:A4;margin:10mm}
     body{margin:0!important;padding:0!important;height:auto!important;overflow:visible!important}
     body > *:not(.pl-printable){display:none!important}
-    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0}
+    html,body{background:white!important}
+    .pl-printable{display:block!important;position:static!important;width:100%!important;background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0;color:#000!important}
     .pl-printable *{visibility:visible!important}
   }`;
 
@@ -3185,7 +3187,7 @@ function printPackingListInterno() {
   document.body.appendChild(printDiv);
   let st = document.getElementById('dyn-print-css');
   if (!st){st=document.createElement('style');st.id='dyn-print-css';document.head.appendChild(st);}
-  st.textContent = `@media print{@page{size:A4 landscape;margin:6mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white;padding:0;font-family:Arial,sans-serif}.pl-printable *{visibility:visible!important}}`;
+  st.textContent = `@media print{@page{size:A4 landscape;margin:6mm}body{margin:0!important}body > *:not(.pl-printable){display:none!important}html,body{background:white!important}.pl-printable{display:block!important;position:static!important;width:100%!important;background:white!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;padding:0;font-family:Arial,sans-serif;color:#000!important}.pl-printable *{visibility:visible!important}}`;
   const origTitle = document.title;
   document.title = 'PL Interno - ' + (cargaActual?.nombre || '');
   setTimeout(()=>{

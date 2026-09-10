@@ -1159,13 +1159,18 @@ try {
       }
     }
 
-    // ── ZPL Templates — siempre subir hardcodeadas, luego merge con Sheets ──
-    // 1. Subir las 4 hardcodeadas a Sheets si no están
+        // ── ZPL Templates — sembrar hardcodeadas SOLO si no existen ya, luego cargar todo ──
+    let rZpl = await sheetsPost({ action:'listarZPL' });
+    const clavesExistentes = new Set((rZpl.templates || []).map(t => t.clave));
+    let sembrado = false;
     for (const [clave, html] of Object.entries(LABEL_HTML_TEMPLATES)) {
-      try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); } catch(e) {}
+      if (!clavesExistentes.has(clave)) {
+        try { await sheetsPost({ action:'guardarZPL', clave, zpl: html }); sembrado = true; } catch(e) {}
+      }
     }
-    // 2. Cargar todo de Sheets (hardcodeadas + personalizadas)
-    const rZpl = await sheetsPost({ action:'listarZPL' });
+    if (sembrado) {
+      rZpl = await sheetsPost({ action:'listarZPL' });
+    }
     if (rZpl.templates && rZpl.templates.length > 0) {
       const loaded = [];
       for (const t of rZpl.templates) {

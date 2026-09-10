@@ -2279,7 +2279,7 @@ function printPallet(pi) {
       caja:      String(ci+1).padStart(2,'0'),
       calibre:   getCalibreLabel(p.calibre),
       peso:      pesoDisplay,
-      lote:      p.tipo === 'Triploide' ? (cargaActual?.loteTrp || cargaActual?.lote || '') : (cargaActual?.loteOv || cargaActual?.lote || ''),
+      lote:      p.tipo === 'triploid' ? (cargaActual?.loteTrp || cargaActual?.lote || '') : (cargaActual?.loteOv || cargaActual?.lote || ''),
       captura:   fmtDateISO(p.fechaCaptura),
       caducidad: getPalletCaducidad(p),
       cliente:   cl?.producido || '',
@@ -2614,7 +2614,7 @@ async function renderCentralPreview() {
 
   if (lbl) lbl.textContent = `caja 01 · pallet ${String(pi+1).padStart(2,'0')}`;
 
-  const lote = activePallet.tipo === 'Triploide'
+  const lote = activePallet.tipo === 'triploid'
     ? (cargaActual?.loteTrp || cargaActual?.lote || '—')
     : (cargaActual?.loteOv  || cargaActual?.lote || '—');
 

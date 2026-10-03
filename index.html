@@ -1924,8 +1924,12 @@ function renderPalletCard(p, i, cl) {
             ? `<button class="btn btn-danger btn-xs" onclick="removePallet(${i})">Eliminar</button>
                <button class="btn btn-print" id="btn-print-${p.id}" ${allOk?'':'disabled'} onclick="printPallet(${i})">
                  🖨 Imprimir pallet ${i+1}
+               </button>
+               <button class="btn btn-secondary btn-sm" id="btn-caratula-${p.id}" ${allOk?'':'disabled'} onclick="printCaratula(${i})">
+                 📄 Imprimir carátula
                </button>`
-            : `<button class="btn btn-secondary btn-sm" onclick="unlockPallet(${i})">✏ Editar y reimprimir</button>`
+            : `<button class="btn btn-secondary btn-sm" onclick="unlockPallet(${i})">✏ Editar y reimprimir</button>
+               <button class="btn btn-secondary btn-sm" onclick="printCaratula(${i})">📄 Imprimir carátula</button>`
           }
         </div>
       </div>
@@ -2198,6 +2202,7 @@ function refreshStats(pi) {
   if ($('st-fill-'+p.id))   $('st-fill-'+p.id).textContent   = `${filled}/${p.cajas}`;
   if ($('st-mpez-'+p.id))   $('st-mpez-'+p.id).textContent   = mediaPez>0?mediaPez.toFixed(3):'—';
   if ($('btn-print-'+p.id)) $('btn-print-'+p.id).disabled    = !allOk;
+  if ($('btn-caratula-'+p.id)) $('btn-caratula-'+p.id).disabled = !allOk;
   $('alert-err-'+p.id)?.classList.toggle('on', hasErr);
   $('alert-med-'+p.id)?.classList.toggle('on', mediaOut);
   $('alert-ok-'+p.id)?.classList.toggle('on', allOk&&peces>0&&!mediaOut);
@@ -2331,6 +2336,53 @@ function printPallet(pi) {
     }
     syncPallets(); checkFinish(); updateStatus();
     // Restore scroll position
+    setTimeout(() => window.scrollTo(0, scrollY), 50);
+  }, 150);
+}
+
+// Carátula A4 para el fleje del pallet. Se puede imprimir tantas veces como se quiera
+// (no marca el pallet como impreso ni cambia su estado).
+function printCaratula(pi) {
+  const p = pallets[pi];
+  if (!p) return;
+  const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
+  const esc = v => String(v ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
+  const cliente = cl?.nombre || cargaActual?.clienteId || '';
+  const palabraCalibre = ({es:'Calibre', en:'Size', fr:'Calibre'})[cl?.idioma] || 'Calibre';
+  const html = `
+    <div class="caratula">
+      <div class="car-pallet">PALLET Nº ${pi+1}</div>
+      <div class="car-line car-cliente">${esc(cliente)}</div>
+      <div class="car-line">${esc(fmtDateISO(p.fechaCaptura))}</div>
+      <div class="car-line">${palabraCalibre} ${esc(getCalibreLabel(p.calibre))}</div>
+    </div>`;
+  const css = `<style>
+    .caratula{width:297mm;height:210mm;box-sizing:border-box;padding:12mm;display:flex;flex-direction:column;
+      align-items:center;justify-content:center;gap:8mm;font-family:Arial,Helvetica,sans-serif;color:#000;
+      text-align:center;page-break-after:avoid;overflow:hidden}
+    .car-pallet{font-size:40mm;font-weight:900;line-height:1;white-space:nowrap}
+    .car-line{font-size:24mm;font-weight:700;line-height:1.1}
+    .car-cliente{font-size:28mm;text-transform:uppercase;overflow-wrap:anywhere}
+  </style>`;
+
+  const printArea = document.getElementById('print-area');
+  printArea.style.display = 'block';
+  printArea.innerHTML = css + html;
+
+  let st = document.getElementById('dyn-print-css');
+  if (!st) { st=document.createElement('style'); st.id='dyn-print-css'; document.head.appendChild(st); }
+  st.textContent = `@media print{
+    @page{size:A4 landscape;margin:0}
+    body > *:not(#print-area){display:none!important}
+    #print-area{display:block!important;position:static!important;background:white;width:auto!important;height:auto!important}
+  }`;
+
+  const scrollY = window.scrollY;
+  setTimeout(() => {
+    window.print();
+    printArea.style.display = 'none';
+    printArea.innerHTML = '';
+    if (st) st.textContent = '';
     setTimeout(() => window.scrollTo(0, scrollY), 50);
   }, 150);
 }

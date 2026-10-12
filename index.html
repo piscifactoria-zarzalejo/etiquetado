@@ -2348,21 +2348,35 @@ function printCaratula(pi) {
   const cl = DB.clientes.find(c => c.id === cargaActual?.clienteId);
   const esc = v => String(v ?? '').replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch]));
   const cliente = cl?.nombre || cargaActual?.clienteId || '';
-  const palabraCalibre = ({es:'Calibre', en:'Size', fr:'Calibre'})[cl?.idioma] || 'Calibre';
+  // Idioma de la carátula: el mismo que la etiqueta del cliente.
+  // Español solo si el cliente está en español; francés si su plantilla de etiqueta es francesa;
+  // cualquier otro caso, inglés.
+  const tmplName = cargaActual?.plantilla || cl?.plantilla || '';
+  const tmplHtml = LABEL_HTML_TEMPLATES[tmplName] || DB.zplTemplates.find(t => t.clave === tmplName)?.html || '';
+  const esFrances = /FRANC|FRANÇ|\bFR\b/i.test(tmplName) || /Poids|Fabriqué|Produit|Date de (pêche|peche)|À consommer/i.test(tmplHtml);
+  const idioma = esFrances ? 'fr' : (cl?.idioma === 'es' ? 'es' : 'en');
+  const txt = ({
+    es: {calibre:'Calibre', cajas:'Cajas',  peso:'Peso neto'},
+    en: {calibre:'Size',    cajas:'Boxes',  peso:'Net weight'},
+    fr: {calibre:'Calibre', cajas:'Caisses', peso:'Poids net'},
+  })[idioma];
+  const numCajas = (p.pesos || []).filter(x => x !== '' && x !== null && x !== undefined && !isNaN(parseFloat(x))).length || p.cajas || 0;
+  const pesoNeto = calcTotal(p.pesos || []).toFixed(1).replace('.', ',');
   const html = `
     <div class="caratula">
       <div class="car-pallet">PALLET Nº ${pi+1}</div>
       <div class="car-line car-cliente">${esc(cliente)}</div>
-      <div class="car-line">${esc(fmtDateISO(p.fechaCaptura))}</div>
-      <div class="car-line">${palabraCalibre} ${esc(getCalibreLabel(p.calibre))}</div>
+      <div class="car-line">${txt.cajas}: ${numCajas}</div>
+      <div class="car-line">${txt.calibre}: ${esc(getCalibreLabel(p.calibre))}</div>
+      <div class="car-line">${txt.peso}: ${pesoNeto} Kg</div>
     </div>`;
   const css = `<style>
     .caratula{width:297mm;height:200mm;box-sizing:border-box;padding:12mm;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;gap:8mm;font-family:Arial,Helvetica,sans-serif;color:#000;
+      align-items:center;justify-content:center;gap:6mm;font-family:Arial,Helvetica,sans-serif;color:#000;
       text-align:center;page-break-after:avoid;overflow:hidden}
-    .car-pallet{font-size:34mm;font-weight:900;line-height:1;white-space:nowrap}
-    .car-line{font-size:20mm;font-weight:700;line-height:1.1}
-    .car-cliente{font-size:24mm;text-transform:uppercase;overflow-wrap:anywhere}
+    .car-pallet{font-size:32mm;font-weight:900;line-height:1;white-space:nowrap}
+    .car-line{font-size:17mm;font-weight:700;line-height:1.1}
+    .car-cliente{font-size:21mm;text-transform:uppercase;overflow-wrap:anywhere}
   </style>`;
 
   const printArea = document.getElementById('print-area');

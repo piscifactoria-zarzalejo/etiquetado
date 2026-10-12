@@ -1925,9 +1925,7 @@ function renderPalletCard(p, i, cl) {
                <button class="btn btn-print" id="btn-print-${p.id}" ${allOk?'':'disabled'} onclick="printPallet(${i})">
                  🖨 Imprimir pallet ${i+1}
                </button>
-               <button class="btn btn-secondary btn-sm" id="btn-caratula-${p.id}" ${allOk?'':'disabled'} onclick="printCaratula(${i})">
-                 📄 Imprimir carátula
-               </button>`
+               <button class="btn btn-secondary btn-sm btn-caratula-${p.id}" ${allOk?'':'disabled'} onclick="printCaratula(${i})">📄 Imprimir carátula</button>`
             : `<button class="btn btn-secondary btn-sm" onclick="unlockPallet(${i})">✏ Editar y reimprimir</button>
                <button class="btn btn-secondary btn-sm" onclick="printCaratula(${i})">📄 Imprimir carátula</button>`
           }
@@ -2202,7 +2200,7 @@ function refreshStats(pi) {
   if ($('st-fill-'+p.id))   $('st-fill-'+p.id).textContent   = `${filled}/${p.cajas}`;
   if ($('st-mpez-'+p.id))   $('st-mpez-'+p.id).textContent   = mediaPez>0?mediaPez.toFixed(3):'—';
   if ($('btn-print-'+p.id)) $('btn-print-'+p.id).disabled    = !allOk;
-  if ($('btn-caratula-'+p.id)) $('btn-caratula-'+p.id).disabled = !allOk;
+  document.querySelectorAll('.btn-caratula-'+p.id).forEach(b => b.disabled = !allOk);
   $('alert-err-'+p.id)?.classList.toggle('on', hasErr);
   $('alert-med-'+p.id)?.classList.toggle('on', mediaOut);
   $('alert-ok-'+p.id)?.classList.toggle('on', allOk&&peces>0&&!mediaOut);
@@ -2362,31 +2360,44 @@ function printCaratula(pi) {
   })[idioma];
   const numCajas = (p.pesos || []).filter(x => x !== '' && x !== null && x !== undefined && !isNaN(parseFloat(x))).length || p.cajas || 0;
   const pesoNeto = calcTotal(p.pesos || []).toFixed(1).replace('.', ',');
+  // Diseño pensado para la pegatina Godex de 100x100 mm. No se fija el tamaño de papel:
+  // el texto se escala solo al papel que se elija al imprimir (Godex 100x100, A4 horizontal...),
+  // manteniendo siempre las mismas proporciones.
   const html = `
     <div class="caratula">
-      <div class="car-pallet">PALLET Nº ${pi+1}</div>
-      <div class="car-line car-cliente">${esc(cliente)}</div>
-      <div class="car-line">${txt.cajas}: ${numCajas}</div>
-      <div class="car-line">${txt.calibre}: ${esc(getCalibreLabel(p.calibre))}</div>
-      <div class="car-line">${txt.peso}: ${pesoNeto} Kg</div>
+      <div class="car-inner" id="car-inner">
+        <div class="car-pallet">PALLET Nº ${pi+1}</div>
+        <div class="car-cliente">${esc(cliente)}</div>
+        <div class="car-line">${txt.cajas}: ${numCajas}</div>
+        <div class="car-line">${txt.calibre}: ${esc(getCalibreLabel(p.calibre))}</div>
+        <div class="car-line">${txt.peso}: <span class="car-peso">${pesoNeto} Kg</span></div>
+      </div>
     </div>`;
   const css = `<style>
-    .caratula{width:297mm;height:200mm;box-sizing:border-box;padding:12mm;display:flex;flex-direction:column;
-      align-items:center;justify-content:center;gap:6mm;font-family:Arial,Helvetica,sans-serif;color:#000;
-      text-align:center;page-break-after:avoid;overflow:hidden}
-    .car-pallet{font-size:32mm;font-weight:900;line-height:1;white-space:nowrap}
-    .car-line{font-size:17mm;font-weight:700;line-height:1.1}
-    .car-cliente{font-size:21mm;text-transform:uppercase;overflow-wrap:anywhere}
+    .caratula{width:100vw;height:98vh;box-sizing:border-box;display:flex;align-items:center;justify-content:center;
+      font-family:Arial,Helvetica,sans-serif;color:#000;background:#fff;text-align:center;overflow:hidden}
+    .car-inner{display:inline-flex;flex-direction:column;align-items:center;gap:.18em;font-size:10px;white-space:nowrap}
+    .car-pallet{font-size:1em;font-weight:900;line-height:1}
+    .car-cliente{font-size:.66em;font-weight:700;line-height:1.1;text-transform:uppercase}
+    .car-line{font-size:.53em;font-weight:700;line-height:1.1}
+    .car-peso{font-size:1.35em;font-weight:900}
   </style>`;
 
   const printArea = document.getElementById('print-area');
   printArea.style.display = 'block';
   printArea.innerHTML = css + html;
 
+  // Medir el bloque de texto (en "em") y escalarlo al 88% del ancho o del alto del papel, lo que llegue antes
+  const inner = document.getElementById('car-inner');
+  const anchoEm = inner.offsetWidth / 10, altoEm = inner.offsetHeight / 10;
+  if (anchoEm > 0 && altoEm > 0) {
+    inner.style.fontSize = `min(${(88/anchoEm).toFixed(3)}vw, ${(86/altoEm).toFixed(3)}vh)`;
+  }
+
   let st = document.getElementById('dyn-print-css');
   if (!st) { st=document.createElement('style'); st.id='dyn-print-css'; document.head.appendChild(st); }
   st.textContent = `@media print{
-    @page{size:A4 landscape;margin:0}
+    @page{size:landscape;margin:0}
     html,body{margin:0!important;padding:0!important;height:auto!important;min-height:0!important;overflow:hidden!important}
     body > *:not(#print-area){display:none!important}
     #print-area{display:block!important;position:static!important;background:white;width:auto!important;height:auto!important}
